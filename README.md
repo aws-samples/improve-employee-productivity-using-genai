@@ -280,7 +280,7 @@ The estimated monthly cost is based on the following assumptions:
 
 ### Estimated Costs
 
-The estimated costs for the given scenario are as follows:
+Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon.com/bedrock/pricing/). The estimated costs for the given scenario are as follows:
 
 - **Claude 3 Haiku Model**:
   - Bedrock: $57.90
