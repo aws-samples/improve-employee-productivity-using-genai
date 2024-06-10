@@ -1,0 +1,4 @@
+langchain_aws
+langchain_core
+langchain_community
+

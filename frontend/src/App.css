@@ -1,0 +1,163 @@
+/* .logo {
+  width: 120px;
+  height: 31px; */
+  /* background: rgba(255, 255, 255, 0.2); */
+  /* margin: 16px 0px 16px 0;
+  float: left;
+} */
+
+.site-layout-content {
+  background: #fff;
+  padding: 24px;
+  min-height: 380px;
+  margin: 16px 0;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+/* .header-logo {
+  height: 40px;
+  width: auto;
+  margin-right: 15px;
+  display: block;
+  background: none;
+  padding: 0;
+  border: none;
+} */
+
+
+.logo {
+  display: flex;
+  align-items: center; /* Vertically center the content */
+  justify-content: center; /* Horizontally center the content */
+  padding-right: 10px;
+  margin: 0; /* Ensure there's no extra margin */
+  float: left; /* Keeps the logo on the left; remove if you want it centered in its container */
+}
+
+.logo-text {
+  color: white;
+  font-weight: bold;
+  padding-left: 10px;
+  margin: 0; /* Adjust or reset the margin */
+  line-height: 1.2; /* Adjust line height to reduce space between lines */
+  text-align: center; /* Ensure the text itself is centered if needed */
+}
+
+.header-logo {
+  height: auto; /* Adjust or make it auto if fixed height is not needed */
+  margin: 0 5px; /* Adjust top and bottom margin */
+}
+
+/* Targeting spans to ensure no additional margins */
+.logo-text span {
+  margin: 0;
+  padding: 0;
+  display: block; /* This ensures each span is on a new line */
+  text-align: center; /* Centers text in each span */
+}
+
+
+.header-menu {
+  display: flex;
+  align-items: center;
+}
+
+.signout-button {
+  margin-left: auto; /* This will push the button to the far right */
+}
+
+/* Hide mobile menu on desktop */
+.desktop-menu {
+  display: block;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+/* Show mobile menu on small screens and hide desktop menu */
+@media screen and (max-width: 950px) {
+  .desktop-menu {
+    display: none;
+  }
+
+  .mobile-menu {
+    display: block;
+  }
+}
+
+.mobile-menu-content .ant-menu-submenu {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.truncate-multiline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.message:hover .copy-icon {
+  visibility: visible;
+}
+
+.chat-container {
+  display: flex;
+  height: 90vh;
+  overflow: hidden;
+}
+
+.right-label {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.right-label .ant-form-item-label {
+  order: 2; /* Place the label after the control */
+  padding-left: 8px; /* Add some space between the control and the label */
+}
+
+.right-label .ant-form-item-control {
+  flex: 1; /* Let the control take the available space */
+  order: 1; /* Place the control before the label */
+}
+
+.input-with-copy-icon {
+  position: relative;
+}
+
+.copy-icon {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  cursor: pointer;
+}
+
+.variable-list-container {
+  max-width: 600px; /* Set a maximum width for the container */
+  margin: 0 auto; /* Center the container horizontally */
+}
+
+.variable-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+/* New styles to move the toggle to the right */
+.toggle-container input {
+  margin-left: auto; /* Push the input to the right */
+}

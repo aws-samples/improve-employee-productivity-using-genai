@@ -1,0 +1,1228 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Employee Productivity GenAI Assistant Example
+
+# Imporing WAFv2 ARN from the other CloudFormation Deployed Stack
+Parameters:
+  WAFv2WebACL:
+      Type: String
+      Description: "The ARN of the WAFv2 WebACL"
+      AllowedPattern: "arn:aws:wafv2:.*"
+      ConstraintDescription: "Must be a valid ARN for a WAFv2 WebACL."
+
+# Settig Global Variables for Lambda functions
+Globals:
+  Function:
+    Runtime: python3.11
+    CodeUri: src/
+    Timeout: 180
+    MemorySize: 256
+
+Resources:
+
+  # Cognito User Pool for Authentication and Authorization
+  MyCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: EmployeeProductivityGenAIAssistantExample
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      UserPoolTags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+
+  # Cognito User Pool Client for Authentication and Authorization
+  MyCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: EmployeeProductivityGenAIAssistantExamplePoolClient
+      GenerateSecret: false
+      UserPoolId: !Ref MyCognitoUserPool
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+
+  # API Gateway for REST API
+  AppApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: EmployeeProductivityGenAIAssistantExampleRESTAPIGW
+      Description: Employee Productivity GenAI Assistant Example REST API
+      Tags:
+       - Key: app
+         Value: EmployeeProductivityGenAIAssistantExample
+
+  # API Gateway OPTIONS for CORS
+  RootOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !GetAtt AppApi.RootResourceId
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationToken,Authorizationtoken,AuthorizationToken'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: "{}"
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # Cognito User Pools Authorizer
+  AuthorizersCognitoUserPools:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      Type: COGNITO_USER_POOLS
+      RestApiId: !Ref AppApi
+      IdentitySource: method.request.header.authorizationToken
+      ProviderARNs: 
+        - !GetAtt MyCognitoUserPool.Arn
+
+  #API Gateway Usage Plan
+  AppApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: Stage 
+    Properties:
+      Description: "Usage plan for controlling and managing API usage rates and limits."
+      ApiStages:
+        - ApiId: !Ref AppApi
+          Stage: Prod 
+      Throttle:
+        BurstLimit: 100
+        RateLimit: 50
+
+  #API Gateway Deployment
+  Deployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - RootOptionsMethod
+      - TemplateOptionsMethod
+      - TemplatesGetMethod
+      - TemplatesPostMethod
+      - TemplatesDeleteMethod
+      - HistoryMethodOptions
+      - HistoryGetMethod
+      - HistoryDeleteMethod
+      - GeneratePresignedUrlMethod
+    Properties:
+      RestApiId: !Ref AppApi
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W68"
+  
+  #API Gateway Stage
+  Stage:  
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: Prod
+      RestApiId: !Ref AppApi
+      DeploymentId: !Ref Deployment
+      Tags:
+       - Key: app
+         Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_73"
+          - id: "CKV_AWS_76"
+          - id: "CKV_AWS_120"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W69"
+          - id: "W64"      
+
+  # Requests DynamoDB Table
+  RequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: app
+          Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_119"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W74"
+
+  # Template API Options Method 
+  TemplateOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref TemplatesResource
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationToken,Authorizationtoken,AuthorizationToken'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS,PUT,DELETE'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: "{}"
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # DynamoDB Table for Templates
+  TemplatesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: templateId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: templateId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+       - Key: app
+         Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_119"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W74"
+  
+  # Lambda function for CRUD operations on templates
+  TemplatesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/templates/
+      Handler: templates.handler
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          TEMPLATES_TABLE: !Ref TemplatesTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TemplatesTable
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+  
+  # Permission to allow Lambda invocation from API Gateway for templates
+  TemplatesFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TemplatesFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AppApi}/*/*/*
+  
+  # Template API Gateway Resource
+  TemplatesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AppApi
+      ParentId: !GetAtt AppApi.RootResourceId
+      PathPart: templates
+
+  # POST method for /templates
+  TemplatesPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref TemplatesResource
+      HttpMethod: POST
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TemplatesFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # GET method for /templates
+  TemplatesGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref TemplatesResource
+      HttpMethod: GET
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TemplatesFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # DELETE method for /templates
+  TemplatesDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref TemplatesResource
+      HttpMethod: DELETE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TemplatesFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # PUT method for /templates
+  TemplatesPutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref TemplatesResource
+      HttpMethod: PUT
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TemplatesFunction.Arn}/invocations
+        IntegrationResponses:
+            - StatusCode: '200'
+              ResponseParameters:
+                method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # History API 
+  HistoryMethodOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref HistoryResource
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationToken,Authorizationtoken,AuthorizationToken'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,DELETE'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: "{}"
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # Lambda function for GET and DELETE operations on history
+  HistoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/history/
+      Handler: history.handler
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref RequestsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RequestsTable
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+  
+  # Permission to allow Lambda invocation from API Gateway for history
+  HistoryFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HistoryFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AppApi}/*/*/*
+  
+  # History API Gateway Resource
+  HistoryResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AppApi
+      ParentId: !GetAtt AppApi.RootResourceId
+      PathPart: history
+
+  # GET method for /history
+  HistoryGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref HistoryResource
+      HttpMethod: GET
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HistoryFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # DELETE method for /history
+  HistoryDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref HistoryResource
+      HttpMethod: DELETE
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HistoryFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # Lambda function for Cognito Authorizer to be used by API Gateway WebSocket
+  CognitoJwtAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/websocket/authorizer/
+      Handler: authorizer.handler
+      Runtime: nodejs18.x
+      ReservedConcurrentExecutions: 10
+      Layers:
+        - !Ref AwsJwtVerifyLayer
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref MyCognitoUserPool
+          APP_CLIENT_ID: !Ref MyCognitoUserPoolClient
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+
+  # Lambda Layer with aws-jwt-veriify package
+  AwsJwtVerifyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: aws-jwt-verify-layer
+      Description: Layer containing aws-jwt-verify package
+      ContentUri: layer/authorizer/
+      CompatibleRuntimes:
+        - nodejs14.x
+      RetentionPolicy: Retain
+  
+  # Lambda Permission for Authorizer
+  AuthorizerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CognitoJwtAuthorizerFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+  
+  # API Gateway Websocket for Lambda Authorizer
+  WebSocketAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      AuthorizerType: REQUEST
+      IdentitySource:
+        - 'route.request.querystring.Authorization'
+      Name: WebSocketAuthorizer
+      AuthorizerUri:
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CognitoJwtAuthorizerFunction.Arn}/invocations
+
+  # API Gateway WebSocket API
+  EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+  
+  # API Gateway WebSocket Route for $connect
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      RouteKey: $connect
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref WebSocketAuthorizer
+      OperationName: ConnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ConnectInteg
+  
+  # Lambda function for $connect
+  ConnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      Description: Connect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnConnectFunction.Arn}/invocations
+  
+  # API Gateway WebSocket Route for $disconnect
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      OperationName: DisconnectRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref DisconnectInteg
+
+  # Lambda function for $disconnect
+  DisconnectInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      Description: Disconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnDisconnectFunction.Arn}/invocations
+  
+  # API Gateway WebSocket Route for $sendmessage
+  SendRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      RouteKey: sendmessage
+      AuthorizationType: NONE
+      OperationName: SendRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref SendInteg
+  
+  # Lambda function for $sendmessage
+  SendInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageFunction.Arn}/invocations
+  
+  # API Gateway Websocket Deployment
+  WebSocketDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - ConnectRoute
+    - SendRoute
+    - DisconnectRoute
+    - ChatRoute
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+  
+  # API Gateway Websocket Stage
+  WebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      DeploymentId: !Ref WebSocketDeployment
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_95"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W46"
+  
+  # Lambda function for $connect
+  OnConnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/websocket/onconnect/
+      Handler: app.handler
+      ReservedConcurrentExecutions: 10
+      MemorySize: 256
+      Runtime: python3.11
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+  
+  # Lambda Permission for $connect
+  OnConnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnConnectFunction
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+  
+  # Lambda function for $disconnect
+  OnDisconnectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/websocket/ondisconnect/
+      Handler: app.handler
+      MemorySize: 256
+      Runtime: python3.11
+      ReservedConcurrentExecutions: 10
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+  
+  # Lambda Permission for $disconnect
+  OnDisconnectPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnDisconnectFunction
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+  
+  # Lambda function for $sendmessage
+  SendMessageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/websocket/sendmessage/
+      Handler: app.handler
+      Timeout: 180
+      MemorySize: 256
+      Runtime: python3.11
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref RequestsTable
+          IMAGE_UPLOAD_BUCKET: !Ref ImageUploadBucket      
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+            - 'execute-api:ManageConnections'
+          Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket}/*'
+        - Sid: BedrockPermisson
+          Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource: 
+            - arn:aws:bedrock:*::foundation-model/*
+        - Sid: DynamoDBPermission
+          Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+          Resource: !GetAtt RequestsTable.Arn
+      - S3CrudPolicy:
+          BucketName: !Ref ImageUploadBucket
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+
+  # Lambda Permission for $sendmessage
+  SendMessagePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SendMessageFunction
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+
+  MyReactAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256 
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: app
+          Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_18"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W14"
+          - id: "W35"
+
+  # CloudFront Distribution for React UI
+  MyCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - DomainName: !GetAtt MyReactAppBucket.RegionalDomainName
+            Id: myReactAppS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOAI}
+        DefaultCacheBehavior:
+          TargetOriginId: myReactAppS3Origin
+          ViewerProtocolPolicy: https-only
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - POST
+            - PATCH
+            - DELETE
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ResponseHeadersPolicyId: 60669652-455b-4ae9-85a4-c4c02393f86c
+        DefaultRootObject: index.html
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: TLSv1.2_2021
+        CustomErrorResponses:
+        - ErrorCode: 403
+          ResponsePagePath: /index.html
+          ResponseCode: 200
+          ErrorCachingMinTTL: 300
+        - ErrorCode: 404
+          ResponsePagePath: /index.html
+          ResponseCode: 200
+          ErrorCachingMinTTL: 300
+        WebACLId: !Ref WAFv2WebACL
+      Tags:
+        - Key: app
+          Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_86"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W10"
+          - id: "W70"
+
+  # Chat DynamoDB Table
+  ChatTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+        - AttributeName: Email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+        - AttributeName: Email
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: app
+          Value: EmployeeProductivityGenAIAssistantExample
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_119"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W74"
+
+  #Lambda Layer for Langchain
+  LangchainLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: layer/langchain/
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: python3.11
+
+  # Lambda function for $chat
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/websocket/chat/
+      Handler: app.handler
+      Layers:
+        - !Ref LangchainLayer
+      Timeout: 180
+      MemorySize: 256
+      Runtime: python3.11
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref ChatTable
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - 'execute-api:ManageConnections'
+          Resource:
+          - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket}/*'
+        - Sid: BedrockPermisson
+          Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource: 
+            - arn:aws:bedrock:*::foundation-model/*
+        - Sid: DynamoDBPermission
+          Effect: Allow
+          Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          Resource: !GetAtt ChatTable.Arn
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+
+  # Lambda Permission for $chat
+  ChatPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ChatFunction
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+  
+  # API Gateway WebSocket Route for $chat
+  ChatRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      RouteKey: chat
+      AuthorizationType: NONE
+      OperationName: ChatRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref ChatInteg
+  
+  # API Gateway WebSocket Integration for $chat
+  ChatInteg:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket
+      Description: Send Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ChatFunction.Arn}/invocations
+  
+  # CloudFront Origin Access Identity for MyReactAppBucket (React App)
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: OAI for MyReactAppBucket
+  
+  # Bucket Policy to allow CloudFront to access S3 bucket
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MyReactAppBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub '${MyReactAppBucket.Arn}/*'
+
+  # S3 bucket for image uploads
+  ImageUploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: app
+          Value: EmployeeProductivityGenAIAssistantExample
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - "PUT"
+              - "POST"
+              - "DELETE"
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders: []
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_18"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W35"
+  
+  # Bucket Policy to allow Lambda function to access S3 bucket
+  ImageUploadBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref ImageUploadBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - Sid: AllowLambdaAccessToGeneratePresignedUrls
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt LambdaExecutionRole.Arn
+            Action: 
+              - "s3:PutObject"
+            Resource: 
+              - !Sub "arn:aws:s3:::${ImageUploadBucket}/*"
+
+  # IAM Role for Lambda function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                Resource: 
+                  - !Sub "arn:aws:s3:::${ImageUploadBucket}/*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # Lambda function to generate pre-signed URLs
+  GeneratePresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/generate_presigned_url/
+      Handler: generate_presigned_url.handler
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          IMAGE_UPLOAD_BUCKET: !Ref ImageUploadBucket
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Tags:
+        app: "EmployeeProductivityGenAIAssistantExample"
+    Metadata:
+      checkov:
+        skip:  
+          - id: "CKV_AWS_117"
+          - id: "CKV_AWS_116"
+          - id: "CKV_AWS_173"
+      cfn_nag:
+        rules_to_suppress:
+          - id: "W89"
+
+  # Permission to allow Lambda invocation from API Gateway
+  GeneratePresignedUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GeneratePresignedUrlFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AppApi}/*/*/*
+  
+  # API Gateway method for generating pre-signed URLs
+  GeneratePresignedUrlMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref GeneratePresignedUrlResource
+      HttpMethod: POST
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref AuthorizersCognitoUserPools
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePresignedUrlFunction.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+  
+  # API Gateway OPTIONS method for generating pre-signed URLs
+  GeneratePresignedUrlOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AppApi
+      ResourceId: !Ref GeneratePresignedUrlResource
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationToken,Authorizationtoken,AuthorizationToken'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS,PUT,DELETE'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: "{}"
+        RequestTemplates:
+          application/json: "{\"statusCode\": 200}"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # API Gateway resource for generating pre-signed URLs
+  GeneratePresignedUrlResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AppApi
+      ParentId: !GetAtt AppApi.RootResourceId
+      PathPart: generatepresignedurl
+
+# CloudFormation Outputs 
+Outputs:
+
+  # API Gateway URL
+  AppApiEndpoint:
+    Description: API Endpoint
+    Value: !Sub "https://${AppApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  
+  # $connect Lambda function ARN
+  OnConnectFunctionArn:
+    Description: "OnConnect function ARN"
+    Value: !GetAtt OnConnectFunction.Arn
+
+  # $disconnect Lambda function ARN
+  OnDisconnectFunctionArn:
+    Description: "OnDisconnect function ARN"
+    Value: !GetAtt OnDisconnectFunction.Arn
+
+  # $sendmessage Lambda function ARN
+  SendMessageFunctionArn:
+    Description: "SendMessage function ARN"
+    Value: !GetAtt SendMessageFunction.Arn
+
+  # API Gateway Websocket URI
+  WebSocketURI:
+    Description: "The WSS Protocol URI to connect to"
+    Value: !Join [ '', [ 'wss://', !Ref EmployeeProductivityGenAIAssistantExampleAPIGWWebSocket, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/',!Ref 'WebSocketStage'] ]
+
+  # Cognito User Pool ARN
+  MyCognitoUserPoolArn:
+    Description: "ARN of the Cognito User Pool"
+    Value: !GetAtt MyCognitoUserPool.Arn
+  
+  # Cognito User Pool ID
+  MyCognitoUserPoolId:
+    Description: "ID of the Cognito User Pool"
+    Value: !Ref MyCognitoUserPool
+
+  # Cognito User Pool URL
+  CognitoUserPoolURL:
+    Description: "URL for Cognito User Pool management console"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cognito/v2/idp/user-pools/${MyCognitoUserPool}/users?region=${AWS::Region}"
+
+  # Cognito User Pool Client ID
+  CognitoUserPoolClientId:
+    Description: "ID of the Cognito User Pool Client"
+    Value: !Ref MyCognitoUserPoolClient
+  
+  # S3 Bucket Name for React APP (UI)
+  S3BucketName:
+    Description: "Name of the S3 bucket for the React app"
+    Value: !Ref MyReactAppBucket
+
+  # CloudFront URL for React APP (UI)
+  CloudFrontURL:
+    Description: "URL of the CloudFront distribution"
+    Value: !Join ['', [ 'https://', !GetAtt MyCloudFrontDistribution.DomainName]]
+  
+  # CloudFront Distribution Id
+  CloudFrontDistributionId:
+    Description: "CloudFront Distribution Id"
+    Value: !Ref MyCloudFrontDistribution
+  
+  # DynamoDB Table Name for Templates
+  TemplatesTableName:
+    Description: "Name of the Templates DynamoDB Table"
+    Value: !Ref TemplatesTable
+  
+  # Image S3 Bucket Name
+  ImageS3BucketName:
+    Description: "Name of the S3 bucket for the images"
+    Value: !Ref ImageUploadBucket

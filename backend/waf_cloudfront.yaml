@@ -1,0 +1,78 @@
+# CloudFormation template creating AWS WAFv2
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: AWS WAFv2 for CloudFront (must be in us-east-1 as described here https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-wafv2-webacl.html#cfn-wafv2-webacl-scope)
+
+Resources:
+
+  # WAF V2 WebACL for CloudFront
+  WAFv2WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Scope: CLOUDFRONT
+      Description: 'Web ACL for CloudFront distribution protecting a web application'
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: MyWebACLMetric
+      Rules:
+        - Name: SQLInjectionRule
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLInjectionRuleMetric
+        - Name: XSSRule
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules:
+                - Name: XSS
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: XSSRuleMetric
+        - Name: KnownBadInputsRule
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: KnownBadInputsRuleMetric
+        - Name: RateLimit5KRule
+          Priority: 4
+          Statement:
+            RateBasedStatement:
+              Limit: 5000
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimit5KRuleMetric
+      DefaultAction:
+        Allow: {}
+
+Outputs:
+  # WAF V2 WebACL ARN for CloudFront usage
+  WAFv2WebACL:
+    Description: "ARN of WAFv2WebACL on us-east-1 region"
+    Value: !GetAtt WAFv2WebACL.Arn
