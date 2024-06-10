@@ -325,23 +325,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 We welcome contributions to Employee Productivity GenAI Assistant Example! If you have suggestions or want to report issues, feel free to open a pull request or issue.
 
-
-## Troubleshooting
-
-An error occurred (ExpiredToken) when calling the DescribeStacks operation: The security token included in the request is expired
-   This is usually caused by an expired token in your aws sts or in your env-file.  You can run aws sts get-session-token to see potentially what it looks like.  You can also refresh your token in the env-file by pulling a new temp cred from Isengard using the normal method.
-
-If you have an error during one of the version checks of aws sts or python because you have multiple versions installed, you can comment those lines out and rerun the deploy safely.
-
-Running locally:
-   cd to frontend
-   npm ci
-      If that fails, you might have to use npm ci --force , which will override safeguards on versioning of dependencies.  Be careful using this as it might break other projects you are working on.
-      You might also have to rename the frontend/node-modules/.bin folder to .bin.old , then retry the npm ci --force command.
-   npm run
-   http://localhost:3000
-
-
 ## Key Considerations 🌐
 
 When implementing solutions, it's essential to follow best practices to ensure security, reliability, and observability. Below are some recommendations, but note that this list is non-exhaustive and there could be more to consider.
