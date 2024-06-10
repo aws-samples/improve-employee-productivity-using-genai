@@ -240,7 +240,7 @@ Explore the capabilities of Employee Productivity GenAI Assistant Example with t
    - *Discover how to create and manage Templates for efficient prompt engineering. This example features the creation of a "Product Naming Pro" template, designed to generate catchy names from product descriptions and keywords.*
 
 3. **Template Application in Activity**:
-   - ![Using Template](/frontend/artifacts/Activity.gif)
+   - ![Using Template](/frontend/artifacts/Activities.gif)
    - *See the Template in action as it is used to name a product described as "noise-canceling, wireless, over-ear headphones." All relevant prompt information is automatically included when the Template is selected in the Activity section.*
 
 4. **Activity History Feature**:
