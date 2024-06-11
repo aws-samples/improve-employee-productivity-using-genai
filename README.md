@@ -260,7 +260,7 @@ These tools are designed to boost your productivity and creativity by streamlini
 
 # Cost Estimation 💰
 
-The cost of running the Employee Productivity GenAI Assistant Example can vary based on your usage patterns and the specific Amazon Bedrock models you choose to utilize. To provide a rough estimate, we've created a cost estimator link that considers a scenario with 50 users, each utilizing the tool 5 times a day with an average of 1K input tokens and 200 output tokens.
+The cost of running the Employee Productivity GenAI Assistant Example can vary based on your usage patterns and the specific Amazon Bedrock models you choose to utilize. To provide a rough estimate, we've created a cost estimator link that considers a scenario with 50 users, each utilizing the tool 5 times a day with an average of 500 input tokens and 200 output tokens.
 
 ## Estimated Monthly Cost
 
@@ -268,13 +268,13 @@ The estimated monthly cost is based on the following assumptions:
 
 - **Users**: 50 users
 - **Usage**: Each user utilizes the tool 5 times a day (150 times per month)
-- **Input Tokens**: Average of 1K input tokens per usage (150K tokens per month per user)
+- **Input Tokens**: Average of 500 input tokens per usage (75K tokens per month per user)
 - **Output Tokens**: Average of 200 output tokens per usage (30K tokens per month per user)
 
 ### Total Monthly Token Usage
 
 - **Input Tokens**: 7.5M 
-  - 1K tokens per request * 5 requests per day * 50 users * 30 days = 7.5M tokens
+  - 500 tokens per request * 5 requests per day * 50 users * 30 days = 3.75M tokens
 - **Output Tokens**: 1.5M
   - 200 tokens per request * 5 requests day * 50 users * 30 days = 1.5M tokens
 
@@ -283,19 +283,19 @@ The estimated monthly cost is based on the following assumptions:
 Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon.com/bedrock/pricing/). The estimated costs for the given scenario are as follows:
 
 - **Claude 3 Haiku Model**:
-  - Bedrock: $57.90
+  - Bedrock: $2.8125
   - Other AWS Services: $16.51
-  - **Total**: $74.41
+  - **Total**: $19.32
 
 - **Claude 3 Sonnet Model**:
-  - Bedrock: $697.50
+  - Bedrock: $33.75
   - Other AWS Services: $16.51
-  - **Total**: $714.01
+  - **Total**: $50.26
 
 - **Claude 3 Opus Model**:
-  - Bedrock: $3487.50
+  - Bedrock: $168.75
   - Other AWS Services: $16.51
-  - **Total**: $3504.01
+  - **Total**: $185.26
 
 > **Notes**: While the cost estimates are calculated using a single model, you have the flexibility to switch between models as needed. For example, if you require a more advanced model like Opus for a specific request, you'll only be charged for that usage. For most requests, you can utilize more cost-optimized models like Haiku, which will help keep the overall cost of the tool lower and optimized for your needs.
 
