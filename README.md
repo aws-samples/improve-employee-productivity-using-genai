@@ -292,6 +292,11 @@ Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon
   - Other AWS Services: $16.51
   - **Total**: $50.26
 
+- **Claude 3.5 Sonnet Model**:
+  - Bedrock: $33.75
+  - Other AWS Services: $16.51
+  - **Total**: $50.26
+
 - **Claude 3 Opus Model**:
   - Bedrock: $168.75
   - Other AWS Services: $16.51
