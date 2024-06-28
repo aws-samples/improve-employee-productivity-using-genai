@@ -111,7 +111,7 @@ const Activity = ({ user }) => {
 
         // New logic to handle model change and image support
         setSelectedModel(templateSelected.modelversion);
-        if (!['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0'].includes(templateSelected.modelversion)) {
+        if (!['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0'].includes(templateSelected.modelversion)) {
           setUploadedImages([]); // Clear uploaded images if model does not support them
         }
 
@@ -323,7 +323,7 @@ const Activity = ({ user }) => {
 
   // Conditionally render the Upload Images section
   const renderImageUploadSection = () => {
-    if (['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0'].includes(selectedModel)) {
+    if (['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0'].includes(selectedModel)) {
       return (
         <Form.Item>
           <Tooltip title="You can upload a maximum of 6 images">

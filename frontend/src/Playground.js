@@ -213,7 +213,7 @@ const handleRemoveImage = (fileName) => {
   const handleModelSelect = (value) => {
     setSelectedModel(value);
     // Check if the new model does not support image uploads
-    if (value !== "anthropic.claude-3-haiku-20240307-v1:0" && value !== "anthropic.claude-3-sonnet-20240229-v1:0" && value !== "anthropic.claude-3-opus-20240229-v1:0") {
+    if (value !== "anthropic.claude-3-haiku-20240307-v1:0" && value !== "anthropic.claude-3-sonnet-20240229-v1:0" && value !== "anthropic.claude-3-opus-20240229-v1:0" && value !== "anthropic.claude-3-5-sonnet-20240620-v1:0") {
       // Clear the uploaded images
       setUploadedImages([]);
     }
@@ -221,7 +221,7 @@ const handleRemoveImage = (fileName) => {
 
   // Conditionally render the Upload Images section
   const renderImageUploadSection = () => {
-    if (selectedModel === "anthropic.claude-3-haiku-20240307-v1:0" || selectedModel === "anthropic.claude-3-sonnet-20240229-v1:0" ||  selectedModel === "anthropic.claude-3-opus-20240229-v1:0") {
+    if (selectedModel === "anthropic.claude-3-haiku-20240307-v1:0" || selectedModel === "anthropic.claude-3-sonnet-20240229-v1:0" ||  selectedModel === "anthropic.claude-3-opus-20240229-v1:0" ||  selectedModel === "anthropic.claude-3-5-sonnet-20240620-v1:0") {
       return (
         <Form.Item>
           <Tooltip title="You can upload a maximum of 6 images">
@@ -270,6 +270,8 @@ const handleRemoveImage = (fileName) => {
           <Option value="anthropic.claude-3-haiku-20240307-v1:0">anthropic.claude-3-haiku-20240307-v1:0</Option>
           { /* nosemgrep: jsx-not-internationalized */}
           <Option value="anthropic.claude-3-sonnet-20240229-v1:0">anthropic.claude-3-sonnet-20240229-v1:0</Option>
+          { /* nosemgrep: jsx-not-internationalized */}
+          <Option value="anthropic.claude-3-5-sonnet-20240620-v1:0">anthropic.claude-3-5-sonnet-20240620-v1:0</Option>    
           { /* nosemgrep: jsx-not-internationalized */}
           <Option value="anthropic.claude-3-opus-20240229-v1:0">anthropic.claude-3-opus-20240229-v1:0</Option>
           { /* nosemgrep: jsx-not-internationalized */}
