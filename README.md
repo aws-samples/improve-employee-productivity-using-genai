@@ -172,19 +172,19 @@ You can deploy both the backend and frontend or handle them separately.
 
 - **To Deploy Both Backend and Frontend (Recommended)**:
   ```bash
-  ./scripts/deploy.sh --container --region=<your-aws-region> --email=<your-email>
+  ./deploy.sh --container --region=<your-aws-region> --email=<your-email>
   ```
   Replace <your-aws-region> with your AWS region (e.g., us-east-1) and <your-email> with your actual email address.
 
 - **To Deploy Only the Backend:**:
   ```bash
-  ./scripts/deploy.sh --backend --container --region=<your-aws-region> --email=<your-email>
+  ./deploy.sh --backend --container --region=<your-aws-region> --email=<your-email>
   ```
   Replace <your-aws-region> with your AWS region (e.g., us-east-1) and <your-email> with your actual email address.
 
 - **To Deploy Only the Frontend:**:
   ```bash
-  ./scripts/deploy.sh --frontend --region=<your-aws-region> --email=<your-email>
+  ./deploy.sh --frontend --region=<your-aws-region> --email=<your-email>
   ```
   Replace <your-aws-region> with your AWS region (e.g., us-east-1) and <your-email> with your actual email address.
 
