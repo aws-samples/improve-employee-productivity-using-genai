@@ -130,7 +130,6 @@ For some details on what the script does, see below:
 
 [AWS CloudShell](https://aws.amazon.com/cloudshell/) allows you to have a free, and instant Linux environment acessible from within your AWS console. To install the solution using AWS CloudShell, please follow the steps below in order.
 
-### Step 1: Install pre-requisits on AWS CloudShell
 1. **Installing Dependecies**:
    First, ensure you have the necessary development tools and libraries installed. Open AWS CloudShell and execute the following commands:
 
