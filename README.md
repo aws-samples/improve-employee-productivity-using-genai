@@ -179,8 +179,11 @@ For some details on what the script does, see below:
    # Before running the deployment command, set the maximum npm memory to 1024MB to avoid OOM error
    export NODE_OPTIONS="--max_old_space_size=1024"
 
-   # Run the deployment command
-   ./deploy.sh --region=your-aws-region --email=your-email
+   # Run the deployment command for the backend
+   ./deploy.sh --backend --region=your-aws-region --email=your-email
+
+   # Run the deployment command for the frontend
+   ./deploy.sh --frontend --region=your-aws-region --email=your-email
    ```
 
    The deployment can take anywhere from 15-30 mins, please be aware that if you don't interact with AWS CloudShell for more than 20 minutes, your CloudShell environment will be deleted. It's recommended that you have a second CloudShell tab open and you run some commands once every 10 mins to avoid the automatically shutdown. 
