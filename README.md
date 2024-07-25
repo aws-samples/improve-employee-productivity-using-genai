@@ -6,14 +6,15 @@
 3. [Folder Structure](#folder-structure-)
 4. [Pre-requisites](#pre-requisites-%EF%B8%8F)
 5. [How to Deploy Locally](#how-to-deploy-locally-)
-6. [How to Deploy via AWS Cloud9](#how-to-deploy-via-aws-cloud9-%EF%B8%8F)
-7. [Post Deployment Steps](#post-deployment-steps-%EF%B8%8F)
-8. [Tool Demo (GIFs)](#employee-productivity-genai-assistant-example-demo-gifs-)
-9. [Cost Estimation](#cost-estimation-)
-10. [Acknowledgements](#acknowledgements-)
-11. [License](#license-)
-12. [Contributing](#contributing-)
-13. [Key Considerations](#key-considerations-)
+6. [How to Deploy via AWS CloudShell](#how-to-deploy-via-aws-cloudshell-%EF%B8%8F)
+7. [How to Deploy via AWS Cloud9](#how-to-deploy-via-aws-cloud9-%EF%B8%8F)
+8. [Post Deployment Steps](#post-deployment-steps-%EF%B8%8F)
+9. [Tool Demo (GIFs)](#employee-productivity-genai-assistant-example-demo-gifs-)
+10. [Cost Estimation](#cost-estimation-)
+11. [Acknowledgements](#acknowledgements-)
+12. [License](#license-)
+13. [Contributing](#contributing-)
+14. [Key Considerations](#key-considerations-)
 
 ## Summary 📝
 
@@ -124,6 +125,69 @@ For some details on what the script does, see below:
    - Invalidates the CloudFront distribution cache to ensure the latest version of the site is served.
 7. **Completion**:
    - The script ends with a success message, URLs for user registration (Cognito), and the application access link (CloudFront).
+  
+## How to Deploy via AWS CloudShell ☁️
+
+[AWS CloudShell](https://aws.amazon.com/cloudshell/) allows you to have a free, and instant Linux environment acessible from within your AWS console. To install the solution using AWS CloudShell, please follow the steps below in order.
+
+### Step 1: Install pre-requisits on AWS CloudShell
+1. **Installing Dependecies**:
+   First, ensure you have the necessary development tools and libraries installed. Open AWS CloudShell and execute the following commands:
+
+   ```sh
+   # Install Development Tools
+   sudo yum groupinstall "Development Tools" -y
+
+   # Install necessary libraries
+   sudo yum install openssl-devel bzip2-devel libffi-devel zlib-devel xz-devel ncurses-devel readline-devel sqlite-devel -y
+   ``
+
+2. **Installing Python 3.11 with PyEnv**:
+   AWS CloudShell comes with PyEnv pre-installed, so we'll use PyEnv to install and set Python 3.11 as the default Python version in our shell.
+
+   ```sh
+   # Install Python 3.11
+   pyenv install 3.11
+   
+   # Set Python 3.11 as default with PyEnv
+   pyenv global 3.11
+   ```
+
+3. **Create New Working Folder on CloudShell**:
+   AWS CloudShell home directory has only 1GB of storage, we'll need to use the temporary storage to build and deploy this application. First let's create a folder in the root directory and set proper user permission.
+
+   ```sh
+   # Folder creation
+   mkdir /aws-samples
+
+   # Setting folder permissions
+   sudo chown cloudshell-user -R /aws-samples
+   ```
+
+4. **Clone repository and deploy solution**:
+   Now that we have a folder and all dependencies installed, let's go step by step on how to deploy the solution using AWS CloudShel.
+
+   ```sh
+   # Navigate to the newly created folder
+   cd /aws-samples
+
+   # Clone the repo in the /aws-samples folder
+   git clone https://github.com/aws-samples/improve-employee-productivity-using-genai.git
+
+   # Navigate to the git folder
+   cd improve-employee-productivity-using-genai/
+
+   # Before running the deployment command, set the maximum npm memory to 1024MB to avoid OOM error
+   export NODE_OPTIONS="--max_old_space_size=1024"
+
+   # Run the deployment command
+   ./deploy.sh --region=your-aws-region --email=your-email
+   ```
+
+   The deployment can take anywhere from 15-30 mins, please be aware that if you don't interact with AWS CloudShell for more than 20 minutes, your CloudShell environment will be deleted. It's recommended that you have a second CloudShell tab open and you run some commands once every 10 mins to avoid the automatically shutdown. 
+
+   Once the deployment has completed, you'll be displayed with the CloudFront URL, username and temporary password to access the solution. Please check the [Post Deployment section](#post-deployment-steps-%EF%B8%8F)
+
 
 ## How to Deploy via AWS Cloud9 ☁️
 
