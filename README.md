@@ -140,7 +140,7 @@ For some details on what the script does, see below:
 
    # Install necessary libraries
    sudo yum install openssl-devel bzip2-devel libffi-devel zlib-devel xz-devel ncurses-devel readline-devel sqlite-devel -y
-   ``
+   ```
 
 2. **Installing Python 3.11 with PyEnv**:
    AWS CloudShell comes with PyEnv pre-installed, so we'll use PyEnv to install and set Python 3.11 as the default Python version in our shell.
