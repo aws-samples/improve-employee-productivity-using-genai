@@ -170,7 +170,7 @@ For some details on what the script does, see below:
 
    ```sh
    # Folder creation
-   mkdir /aws-samples
+   sudo mkdir /aws-samples
 
    # Setting folder permissions
    sudo chown cloudshell-user -R /aws-samples
