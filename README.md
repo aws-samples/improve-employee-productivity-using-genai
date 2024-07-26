@@ -139,6 +139,7 @@ For some details on what the script does, see below:
 
    # Install necessary libraries
    sudo yum install openssl-devel bzip2-devel libffi-devel zlib-devel xz-devel ncurses-devel readline-devel sqlite-devel -y
+   
    ```
 
 2. **Installing Python 3.11 with PyEnv**:
@@ -163,6 +164,7 @@ For some details on what the script does, see below:
    
    # Set Python 3.11 as default with PyEnv
    pyenv global 3.11
+   
    ```
 
 3. **Create New Working Folder on CloudShell**:
@@ -174,6 +176,7 @@ For some details on what the script does, see below:
 
    # Setting folder permissions
    sudo chown cloudshell-user -R /aws-samples
+   
    ```
 
 4. **Clone repository and deploy solution**:
