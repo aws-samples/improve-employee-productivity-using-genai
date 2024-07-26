@@ -142,9 +142,22 @@ For some details on what the script does, see below:
    ```
 
 2. **Installing Python 3.11 with PyEnv**:
-   AWS CloudShell comes with PyEnv pre-installed, so we'll use PyEnv to install and set Python 3.11 as the default Python version in our shell.
+   AWS CloudShell does not come with Python 3.11, so we'll need to install PyEnv to then install and set Python 3.11 as the default Python version in our shell.
 
    ```sh
+   # Install PyEnv
+   git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+
+   # Set .bash_profile env
+   echo ' ' >> ~/.bash_profile
+   echo '# Pyenv Configuration' >> ~/.bash_profile
+   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
+   echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
+   echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
+
+   # Reinitialize your Shell
+   source ~/.bash_profile
+   
    # Install Python 3.11
    pyenv install 3.11
    
