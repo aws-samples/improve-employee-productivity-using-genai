@@ -135,8 +135,8 @@ For some details on what the script does, see below:
 
    ```sh
    # Install Development Tools
-   sudo yum groupinstall "Development Tools" -y
-
+   sudo yum groupinstall "Development Tools" -y && \
+   
    # Install necessary libraries
    sudo yum install openssl-devel bzip2-devel libffi-devel zlib-devel xz-devel ncurses-devel readline-devel sqlite-devel -y
    
@@ -164,7 +164,6 @@ For some details on what the script does, see below:
    
    # Set Python 3.11 as default with PyEnv
    pyenv global 3.11
-   
    ```
 
 3. **Create New Working Folder on CloudShell**:
@@ -172,11 +171,10 @@ For some details on what the script does, see below:
 
    ```sh
    # Folder creation
-   sudo mkdir /aws-samples
-
+   sudo mkdir /aws-samples && \
+   
    # Setting folder permissions
    sudo chown cloudshell-user -R /aws-samples
-   
    ```
 
 4. **Clone repository and deploy solution**:
