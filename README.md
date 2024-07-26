@@ -192,10 +192,20 @@ For some details on what the script does, see below:
 
    # Before running the deployment command, set the maximum npm memory to 1024MB to avoid OOM error
    export NODE_OPTIONS="--max_old_space_size=1024"
+   ```
 
+5. **Deploy the Backend of the solution**:
+   Now that we have all the dependecies to deploy our application we can deploy the backend of our solution by using the command below. We are using the deployment option for backend and then frontend because Cloudshell does not have enough memory to keep deploy both in the same command. Please change the region and e-mail before running the command below.
+   
+   ```sh
    # Run the deployment command for the backend
    ./deploy.sh --backend --region=your-aws-region --email=your-email
+   ```
 
+6. **Deploy the Frontend of the solution**:
+   Finally the last thing remaining is to deploy the Frontend of the solution. Please use the same region and e-mail as you've ran in the Backend command above. 
+
+   ```sh 
    # Run the deployment command for the frontend
    ./deploy.sh --frontend --region=your-aws-region --email=your-email
    ```
