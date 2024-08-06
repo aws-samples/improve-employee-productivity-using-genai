@@ -17,7 +17,7 @@ const Templates = ({user}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
-  const email = user?.attributes?.email;
+  const email = user?.email;
   const [form] = Form.useForm();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCloning, setIsCloning] = useState(false);

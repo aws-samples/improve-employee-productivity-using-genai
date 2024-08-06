@@ -109,7 +109,7 @@ const ChatMessage = ({ text, sender }) => {
 };
 
 const Chat = ({ user }) => {
-  const email = user?.attributes?.email;
+  const email = user?.email;
   const [messages, setMessages] = useState([
     {
       id: 1,

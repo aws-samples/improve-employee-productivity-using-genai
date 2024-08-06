@@ -1,8 +1,8 @@
  // nosemgrep: jsx-not-internationalized
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'; // <-- Change here
-import { Layout } from 'antd';
+import { Layout, Spin } from 'antd';
 import './App.css';
 import AppHeader from './Header';
 import Playground from './Playground';
@@ -14,6 +14,8 @@ import Activity from './Activity'; // New Activity Component
 import History from './History'; // New History Component
 import Chat from './Chat';
 import '@aws-amplify/ui-react/styles.css';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+
 
 const { Content } = Layout;
 
@@ -33,9 +35,41 @@ const components = {
 
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        setUser({
+          userId: currentUser.userId,
+          email: attributes.email,
+          // Add any other attributes you need
+        });
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <Authenticator components={components} hideSignUp={true} loginMechanisms={['email']}>
-      {({ signOut, user }) => (
+      {({ signOut }) => (
         <Router>
         <Layout className="layout">
           <AppHeader user={user} />
