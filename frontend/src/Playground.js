@@ -5,6 +5,7 @@ import { Form, Slider, Input, InputNumber,  Button, Select, Switch, Row, Col, me
 import { fetchTokenIfExpired } from './utils/authHelpers';
 import { UploadOutlined, CloseCircleOutlined, CopyOutlined } from '@ant-design/icons';
 
+
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -21,7 +22,7 @@ const Playground = ({ user }) => {
   const [topK, setTopK] = useState(250);
   const [topP, setTopP] = useState(0.999);
   const [maxTokensToSample, setMaxTokensToSample] = useState(4000);
-  const email = user?.attributes?.email;
+  const email = user?.email;
   const websocketUrl = process.env.REACT_APP_WEBSOCKET_URL;
   const wsRef = useRef(null);
   const [wordCount, setWordCount] = useState(0);
@@ -30,9 +31,11 @@ const Playground = ({ user }) => {
   const MAX_BYTE_SIZE = 124 * 1024; // 124KB in bytes
   const [inputText, setInputText] = useState(''); // New state for controlling the input text
   const [selectedModel, setSelectedModel] = useState("anthropic.claude-3-haiku-20240307-v1:0"); // Track selected model
-  const userId = user.attributes.sub; // Assuming the user ID is available here
+  const userId = user?.userId; // Assuming the user ID is available here
+
+
   const [systemMessage, setSystemMessage] = useState(''); // State for storing the system message
- 
+  
   const handleEndOfTransmission = () => {
     if (wsRef.current) {
       wsRef.current.close();

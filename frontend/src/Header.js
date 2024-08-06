@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Drawer, Button } from 'antd';
 import { useLocation, Link, useNavigate} from 'react-router-dom';
-import { Auth } from 'aws-amplify';
+import { signOut } from 'aws-amplify/auth';
 
 const { Header } = Layout;
 
@@ -14,9 +14,9 @@ const AppHeader = ({user}) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
 
-  const signOut = async () => {
+  const signOutCall = async () => {
     try {
-      await Auth.signOut();
+      await signOut();
       navigate('/');
     } catch (error) {
       console.error('Error signing out: ', error);
@@ -63,7 +63,7 @@ const AppHeader = ({user}) => {
     },
     {
       // nosemgrep: jsx-not-internationalized 
-      label: (<Button type="text" style={{ color: '#ffffffa6' }} onClick={signOut}>Sign Out</Button>)
+      label: (<Button type="text" style={{ color: '#ffffffa6' }} onClick={signOutCall}>Sign Out</Button>)
     }
   ];
 
@@ -134,7 +134,7 @@ const AppHeader = ({user}) => {
                 onClick={() => setDrawerVisible(false)}
                 />
             {/* nosemgrep: jsx-not-internationalized */}
-            <Button  type="text" style={{ marginLeft: 'auto', color: '#ffffffa6' }} onClick={signOut} >Sign Out</Button>
+            <Button  type="text" style={{ marginLeft: 'auto', color: '#ffffffa6' }} onClick={signOutCall} >Sign Out</Button>
             </Drawer>
         </div>
     ) : (
@@ -149,7 +149,7 @@ const AppHeader = ({user}) => {
         style={{ borderBottom: 'none', minWidth: 20 }}
       />
       {/* nosemgrep: jsx-not-internationalized */}
-      <Button  type="text" style={{ marginLeft: 'auto', color: '#ffffffa6' }} onClick={signOut} >
+      <Button  type="text" style={{ marginLeft: 'auto', color: '#ffffffa6' }} onClick={signOutCall} >
         {/* nosemgrep: jsx-not-internationalized */}
         Sign Out
       </Button>

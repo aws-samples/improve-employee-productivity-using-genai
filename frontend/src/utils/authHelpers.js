@@ -1,24 +1,29 @@
-import { Auth } from 'aws-amplify';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 export const fetchTokenIfExpired = async () => {
     const now = new Date().getTime();
-    const currentSession = await Auth.currentSession();
 
-    if (!currentSession) {
-        // Handle the case where there's no session.
-        throw new Error('No current session found');
+    try {
+        const { tokens } = await fetchAuthSession();
+
+        if (!tokens || !tokens.idToken) {
+            throw new Error('No valid session found');
+        }
+
+        const token = tokens.idToken.toString();
+        const tokenExpiry = tokens.idToken.payload.exp * 1000;
+
+        // Add a buffer time (e.g., 5 minutes) to refresh the token before it expires
+        // const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+        if (!token || now > tokenExpiry) {
+            // Refresh the session
+            const { tokens: newTokens } = await fetchAuthSession({ forceRefresh: true });
+            return newTokens.idToken.toString();
+        }
+
+        return token;
+    } catch (error) {
+        console.error('Error fetching auth session:', error);
+        throw error;
     }
-
-    const token = currentSession.idToken.jwtToken;
-    const tokenExpiry = currentSession.idToken.payload.exp * 1000;
-
-    // Here, you might need a threshold to decide when to refresh the token.
-    // Just checking if the token has expired might be too late.
-    // You could subtract a few minutes (in ms) to ensure you refresh before it actually expires.
-    if (!token || now > tokenExpiry) {
-        // Assuming Auth.currentSession() would refresh the token
-        const currentUser = await Auth.currentAuthenticatedUser({ bypassCache: true });
-        return currentUser.signInUserSession.idToken.jwtToken;
-    }
-    return token;
 };

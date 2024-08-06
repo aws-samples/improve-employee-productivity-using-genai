@@ -17,7 +17,7 @@ const History = ({ user }) => {
   const [searchText, setSearchText] = useState("");
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [isLoading, setIsLoading] = useState(false); // New loading state
-  const email = user?.attributes?.email;
+  const email = user?.email;
 
   useEffect(() => {
     const fetchHistoryData = async () => {

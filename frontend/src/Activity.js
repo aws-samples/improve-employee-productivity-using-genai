@@ -22,7 +22,7 @@ const Activity = ({ user }) => {
     const [topP, setTopP] = useState(0.999);
     const [maxTokensToSample, setMaxTokensToSample] = useState(4000);
     const [templates, setTemplates] = useState([]);
-    const email = user?.attributes?.email;
+    const email = user?.email;
     const [filteredTemplates, setFilteredTemplates] = useState([]);
     const wsRef = useRef(null);
     const [selectedTemplateData, setSelectedTemplateData] = useState(null);
@@ -36,7 +36,7 @@ const Activity = ({ user }) => {
     const [inputPlaceholder, setInputPlaceholder] = useState('');
     const [uploadedImages, setUploadedImages] = useState([]);
     const [selectedModel, setSelectedModel] = useState('');
-    const userId = user.attributes.sub; // Assuming the user ID is available here
+    const userId = user?.sub; // Assuming the user ID is available here
     const [systemPrompt, setSystemPrompt] = useState('');
 
     
