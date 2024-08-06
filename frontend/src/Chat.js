@@ -113,7 +113,7 @@ const Chat = ({ user }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Welcome to Employee Productivity GenAI Assistant Example CHat! How can I help?",
+      text: "Welcome to Employee Productivity GenAI Assistant Example Chat! How can I help?",
       sender: "bot",
     },
   ]);
