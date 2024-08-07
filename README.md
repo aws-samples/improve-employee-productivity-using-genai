@@ -30,6 +30,8 @@ Employee Productivity GenAI Assistant Example showcases its functionalities thro
 - **Activity History Feature:** This logs all interactions within the Playground and Activity areas, ensuring that every detail from past activities is accessible for review and tracking.
 - **Interactive Chat with Templates:** Enhances the utility of templates through a chat interface, allowing users to refine outputs using natural language interactions.
 - **Multi-Modality Input:** Supports the upload and use of up to six images, providing inputs for AI models to generate rich, context-aware responses.
+- **Markdown Output Formatting:** Enhances readability and structure of AI-generated content by supporting markdown formatting in the output. This feature allows for better organization of information, including headers, lists, code blocks, and more, directly in the assistant's responses.
+
 
 By providing a streamlined interface and comprehensive tools, Employee Productivity GenAI Assistant Example not only simplifies the generation of complex documents but also enhances user productivity and creativity. This GitHub repository serves as a guide for deploying this solution on user-owned AWS accounts, ensuring that anyone can set up and start benefiting from the advanced capabilities of this AI-powered writing assistant.
 
@@ -212,6 +214,8 @@ For some details on what the script does, see below:
 
    The deployment can take anywhere from 15-30 mins, please be aware that if you don't interact with AWS CloudShell for more than 20 minutes, your CloudShell environment will be deleted. It's recommended that you have a second CloudShell tab open and you run some commands once every 10 mins to avoid the automatically shutdown. 
 
+   > **Note**: If this command fails due to CloudShell out of memory, please just re-run the `--frontend` command again and it should work. 
+   
    Once the deployment has completed, you'll be displayed with the CloudFront URL, username and temporary password to access the solution. Please check the [Post Deployment section](#post-deployment-steps-%EF%B8%8F)
 
 

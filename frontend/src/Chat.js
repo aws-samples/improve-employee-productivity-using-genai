@@ -19,7 +19,10 @@ import { UserOutlined, RobotOutlined, CopyOutlined } from "@ant-design/icons";
 import "./App.css";
 import { fetchTokenIfExpired } from "./utils/authHelpers";
 import { v4 as uuidv4 } from 'uuid';
-import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github.css'; // or any other style you prefer
+
 
 
 const { Option } = Select;
@@ -42,26 +45,69 @@ const ChatMessage = ({ text, sender }) => {
         });
     }
   };
-
-  const formatText = (text) => {
-    if (typeof text === "string") {
-      // Escapes HTML tags, then replaces newline characters with HTML <br />
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br />");
-    } else {
-      return null;
+  
+  const extractTextFromChildren = (children) => {
+    if (!children) {
+      return '';
     }
+    if (typeof children === 'string') {
+      return children;
+    }
+    if (Array.isArray(children)) {
+      return children.map((child) => {
+        if (typeof child === 'string') {
+          return child;
+        } else if (typeof child === 'object' && child.props && child.props.children) {
+          return extractTextFromChildren(child.props.children);
+        }
+        return '';
+      }).join('');
+    }
+    if (typeof children === 'object' && children.props && children.props.children) {
+      return extractTextFromChildren(children.props.children);
+    }
+    return '';
   };
 
   const renderContent = () => {
-    if (typeof text === "string") {
-      const sanitizedText = DOMPurify.sanitize(text);
-      return <div dangerouslySetInnerHTML={{ __html: formatText(sanitizedText) }} />;
+    if (typeof text === 'string') {
+      return (
+        <ReactMarkdown
+          className="markdown-body"
+          rehypePlugins={[rehypeHighlight]}
+          components={{
+            code({ node, inline, className, children, ...props }) {
+              const match = /language-(\w+)/.exec(className || '');
+              const codeContent = extractTextFromChildren(children).replace(/\n$/, '');
+              return !inline && match ? (
+                <div style={{ position: 'relative' }}>
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  <CopyOutlined
+                    style={{
+                      position: 'absolute',
+                      top: '5px',
+                      right: '5px',
+                      fontSize: '16px',
+                      cursor: 'pointer',
+                      color: '#1890ff',
+                    }}
+                    onClick={() => copyToClipboard(codeContent)}
+                  />
+                </div>
+              ) : (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            },
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      );
     } else {
-      // Render React component directly
       return text;
     }
   };
