@@ -214,6 +214,8 @@ For some details on what the script does, see below:
 
    The deployment can take anywhere from 15-30 mins, please be aware that if you don't interact with AWS CloudShell for more than 20 minutes, your CloudShell environment will be deleted. It's recommended that you have a second CloudShell tab open and you run some commands once every 10 mins to avoid the automatically shutdown. 
 
+   > **Note**: If this command fails due to CloudShell out of memory, please just re-run the `--frontend` command again and it should work. 
+   
    Once the deployment has completed, you'll be displayed with the CloudFront URL, username and temporary password to access the solution. Please check the [Post Deployment section](#post-deployment-steps-%EF%B8%8F)
 
 
