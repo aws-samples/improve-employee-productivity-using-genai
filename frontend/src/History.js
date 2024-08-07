@@ -1,9 +1,13 @@
- // nosemgrep: jsx-not-internationalized
+// nosemgrep: jsx-not-internationalized
 
 import React, { useState, useEffect } from "react";
 import { Table, Button, message, Modal, Input, Typography } from "antd";
 import { fetchTokenIfExpired } from "./utils/authHelpers"; // Ensure this path is correct
 import { CopyOutlined } from "@ant-design/icons";
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github.css'; // or any other style you prefer
+import './App.css';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -227,6 +231,29 @@ const History = ({ user }) => {
       : "🌙 Good evening,";
   };
 
+  const extractTextFromChildren = (children) => {
+    if (!children) {
+      return '';
+    }
+    if (typeof children === 'string') {
+      return children;
+    }
+    if (Array.isArray(children)) {
+      return children.map((child) => {
+        if (typeof child === 'string') {
+          return child;
+        } else if (typeof child === 'object' && child.props && child.props.children) {
+          return extractTextFromChildren(child.props.children);
+        }
+        return '';
+      }).join('');
+    }
+    if (typeof children === 'object' && children.props && children.props.children) {
+      return extractTextFromChildren(children.props.children);
+    }
+    return '';
+  };
+
   return (
     <div>
       {/* nosemgrep: jsx-not-internationalized */}
@@ -336,19 +363,68 @@ const History = ({ user }) => {
           {/* nosemgrep: jsx-not-internationalized */}
           <b>Output:</b>
         </p>
-        <div className="input-with-copy-icon">
-          <Input.TextArea
-            value={currentRecord.completion}
-            readOnly
-            style={{ resize: "vertical", width: "100%", minHeight: "200px" }}
-          />
-          <span
-            className="copy-icon"
-            onClick={() => copyToClipboard(currentRecord.completion)}
-          >
-            <CopyOutlined />
-          </span>
-        </div>
+        <div className="input-with-copy-icon" style={{ position: 'relative', minHeight: '200px' }}>
+  <div
+    style={{
+      resize: 'vertical',
+      width: '100%',
+      minHeight: '200px',
+      maxHeight: '400px', // Adjust max height as needed
+      overflow: 'auto',
+      border: '1px solid #d9d9d9',
+      borderRadius: '4px',
+      padding: '9px 11px',
+      background: '#fafafa',
+    }}
+  >
+    <ReactMarkdown
+      className="markdown-body"
+      rehypePlugins={[rehypeHighlight]}
+      components={{
+        code({ node, inline, className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className || '');
+          const codeContent = extractTextFromChildren(children).replace(/\n$/, '');
+          return !inline && match ? (
+            <div style={{ position: 'relative' }}>
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              <CopyOutlined
+                style={{
+                  position: 'absolute',
+                  top: '5px',
+                  right: '5px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  color: '#1890ff',
+                }}
+                onClick={() => copyToClipboard(codeContent)}
+              />
+            </div>
+          ) : (
+            <code className={className} {...props}>
+              {children}
+            </code>
+          );
+        },
+      }}
+    >
+      {currentRecord.completion}
+    </ReactMarkdown>
+  </div>
+  <span
+    className="copy-icon"
+    onClick={() => copyToClipboard(currentRecord.completion)}
+    style={{
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      cursor: 'pointer',
+    }}
+  >
+    <CopyOutlined />
+  </span>
+</div>
         <p />
         <Text>
           {/* nosemgrep: jsx-not-internationalized */}
