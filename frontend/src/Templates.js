@@ -27,7 +27,7 @@ const Templates = ({user}) => {
   useEffect(() => {
     const checkAdminRole = async () => {
       try {
-        const groups = user.signInUserSession.accessToken.payload['cognito:groups'];
+        const groups = user?.signInUserSession?.accessToken?.payload?.['cognito:groups'];
         if (groups && groups.includes('Admin')) {
           setIsAdmin(true);
         }
