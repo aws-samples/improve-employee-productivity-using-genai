@@ -619,7 +619,7 @@ const Activity = ({ user }) => {
         <div className="output-container" style={{ width: '100%' }}>
           <ReactMarkdown
             className="markdown-body"
-            rehypePlugins={[rehypeHighlight]}
+            rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
             components={{
               code({ node, inline, className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || '');

@@ -365,10 +365,9 @@ const Playground = ({ user }) => {
         <div className="output-container" style={{ width: '100%' }}>
           <ReactMarkdown
             className="markdown-body"
-            rehypePlugins={[rehypeHighlight]}
+            rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
             components={{
               code({ node, inline, className, children, ...props }) {
-                console.log(children)
                 const match = /language-(\w+)/.exec(className || '');
                 const codeContent = extractTextFromChildren(children).replace(/\n$/, '');
                 return !inline && match ? (
