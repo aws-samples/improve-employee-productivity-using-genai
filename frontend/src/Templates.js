@@ -10,6 +10,7 @@ const { Option } = Select;
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const Templates = ({user}) => {
+  console.log(user)
   const [promptTemplates, setPromptTemplates] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState({});
@@ -21,8 +22,6 @@ const Templates = ({user}) => {
   const [form] = Form.useForm();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
-
-
 
   useEffect(() => {
     const checkAdminRole = async () => {
@@ -69,9 +68,11 @@ const Templates = ({user}) => {
         }
       });
       const publicTemplates = await publicResponse.json();
-  
+      console.log(email)
+      console.log(`${apiUrl}/templates?createdBy=${email}`)
       // Fetch user-specific templates
-      const userResponse = await fetch(`${apiUrl}/templates?createdBy=${email}`, {
+      const encodedEmail = encodeURIComponent(email);
+      const userResponse = await fetch(`${apiUrl}/templates?createdBy=${encodedEmail}`, {
         headers: { authorizationToken }
       });
       const userTemplates = await userResponse.json();

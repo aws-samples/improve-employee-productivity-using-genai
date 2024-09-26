@@ -29,11 +29,13 @@ const History = ({ user }) => {
       let allData = [...historyData]; // Start with existing data
   
       const fetchPage = async (lastRequestEmail, lastRequestTimestamp) => {
+        const encodedEmail = encodeURIComponent(email);
+        const encodedLastRequestEmail = encodeURIComponent(lastRequestEmail);
         try {
           const authorizationToken = await fetchTokenIfExpired();
-          let url = `${apiUrl}/history?email=${email}`;
-          if (lastRequestEmail && lastRequestTimestamp) {
-            url += `&last_key_email=${lastRequestEmail}`;
+          let url = `${apiUrl}/history?email=${encodedEmail}`;
+          if (encodedLastRequestEmail && lastRequestTimestamp) {
+            url += `&last_key_email=${encodedLastRequestEmail}`;
             url += `&last_key_timestamp=${lastRequestTimestamp}`
           }
   

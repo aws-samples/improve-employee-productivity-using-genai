@@ -320,8 +320,9 @@ const Chat = ({ user }) => {
         const publicTemplates = await publicResponse.json();
   
         // Fetch user-specific templates
+        const encodedEmail = encodeURIComponent(email);
         const userResponse = await fetch(
-          `${apiUrl}/templates?createdBy=${email}`,
+          `${apiUrl}/templates?createdBy=${encodedEmail}`,
           {
             headers: { authorizationToken },
           }

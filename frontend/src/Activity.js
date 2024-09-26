@@ -75,7 +75,8 @@ const Activity = ({ user }) => {
         const publicTemplates = await publicResponse.json();
 
         // Fetch user-specific templates
-        const userResponse = await fetch(`${apiUrl}/templates?createdBy=${email}`, {
+        const encodedEmail = encodeURIComponent(email);
+        const userResponse = await fetch(`${apiUrl}/templates?createdBy=${encodedEmail}`, {
           headers: { authorizationToken }
         });
         const userTemplates = await userResponse.json();
