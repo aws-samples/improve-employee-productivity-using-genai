@@ -43,6 +43,7 @@ const Templates = ({user}) => {
   const modelOptions = [
     { label: 'anthropic.claude-3-haiku-20240307-v1:0', value: 'anthropic.claude-3-haiku-20240307-v1:0' },
     { label: 'anthropic.claude-3-sonnet-20240229-v1:0', value: 'anthropic.claude-3-sonnet-20240229-v1:0' },
+    { label: 'anthropic.claude-3-5-sonnet-20241022-v2:0', value: 'anthropic.claude-3-5-sonnet-20241022-v2:0' },
     { label: 'anthropic.claude-3-5-sonnet-20240620-v1:0', value: 'anthropic.claude-3-5-sonnet-20240620-v1:0' },
     { label: 'anthropic.claude-3-opus-20240229-v1:0', value: 'anthropic.claude-3-opus-20240229-v1:0' },
     { label: 'anthropic.claude-v2:1', value: 'anthropic.claude-v2:1' },

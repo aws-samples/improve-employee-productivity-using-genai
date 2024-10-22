@@ -674,6 +674,10 @@ const Chat = ({ user }) => {
                           anthropic.claude-3-sonnet-20240229-v1:0
                         </Option>
                         {/* nosemgrep: jsx-not-internationalized */}
+                        <Option value="anthropic.claude-3-5-sonnet-20241022-v2:0">
+                          anthropic.claude-3-5-sonnet-20241022-v2:0
+                        </Option>
+                        {/* nosemgrep: jsx-not-internationalized */}
                         <Option value="anthropic.claude-3-5-sonnet-20240620-v1:0">
                           anthropic.claude-3-5-sonnet-20240620-v1:0
                         </Option>                        
