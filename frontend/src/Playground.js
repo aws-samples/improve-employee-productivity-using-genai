@@ -208,13 +208,13 @@ const Playground = ({ user }) => {
 
   const handleModelSelect = (value) => {
     setSelectedModel(value);
-    if (value !== 'anthropic.claude-3-haiku-20240307-v1:0' && value !== 'anthropic.claude-3-sonnet-20240229-v1:0' && value !== 'anthropic.claude-3-opus-20240229-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20240620-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
+    if (value !== 'anthropic.claude-3-haiku-20240307-v1:0' && value !== 'anthropic.claude-3-5-haiku-20241022-v1:0' && value !== 'anthropic.claude-3-sonnet-20240229-v1:0' && value !== 'anthropic.claude-3-opus-20240229-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20240620-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
       setUploadedImages([]);
     }
   };
 
   const renderImageUploadSection = () => {
-    if (selectedModel === 'anthropic.claude-3-haiku-20240307-v1:0' || selectedModel === 'anthropic.claude-3-sonnet-20240229-v1:0' || selectedModel === 'anthropic.claude-3-opus-20240229-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20240620-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
+    if (selectedModel === 'anthropic.claude-3-haiku-20240307-v1:0' || selectedModel === 'anthropic.claude-3-5-haiku-20241022-v1:0' || selectedModel === 'anthropic.claude-3-sonnet-20240229-v1:0' || selectedModel === 'anthropic.claude-3-opus-20240229-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20240620-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
       return (
         <Form.Item>
           <Tooltip title="You can upload a maximum of 6 images">
@@ -273,6 +273,7 @@ const Playground = ({ user }) => {
       <Form.Item label="Model Selection" name="modelId">
         <Select defaultValue="anthropic.claude-3-haiku-20240307-v1:0" onSelect={handleModelSelect}>
           <Option value="anthropic.claude-3-haiku-20240307-v1:0">anthropic.claude-3-haiku-20240307-v1:0</Option>
+          <Option value="anthropic.claude-3-5-haiku-20241022-v1:0">anthropic.claude-3-5-haiku-20241022-v1:0</Option>
           <Option value="anthropic.claude-3-sonnet-20240229-v1:0">anthropic.claude-3-sonnet-20240229-v1:0</Option>
           <Option value="anthropic.claude-3-5-sonnet-20241022-v2:0">anthropic.claude-3-5-sonnet-20241022-v2:0</Option>
           <Option value="anthropic.claude-3-5-sonnet-20240620-v1:0">anthropic.claude-3-5-sonnet-20240620-v1:0</Option>
