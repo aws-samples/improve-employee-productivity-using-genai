@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Form, Slider, Input, InputNumber, Button, Select, Switch, Row, Col, message, Upload, Tooltip } from 'antd';
+import { Form, Slider, Input, InputNumber, Button, Select, Switch, Row, Col, message, Upload, Tooltip, Space } from 'antd';
 import { fetchTokenIfExpired } from './utils/authHelpers';
 import { UploadOutlined, CloseCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
@@ -34,6 +34,7 @@ const Playground = ({ user }) => {
   const userId = user?.userId; // Assuming the user ID is available here
 
   const [systemMessage, setSystemMessage] = useState(''); // State for storing the system message
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const handleEndOfTransmission = () => {
     if (wsRef.current) {
@@ -113,7 +114,7 @@ const Playground = ({ user }) => {
   };
 
   const handleInputChange = (e) => {
-    const newText = e.target.value;
+    const newText = e.target.value || '';
     const bytes = new TextEncoder().encode(newText).length;
 
     if (bytes <= MAX_BYTE_SIZE) {
@@ -260,6 +261,58 @@ const Playground = ({ user }) => {
   };
   
 
+  const handleOptimizePrompt = async () => {
+    try {
+        setIsOptimizing(true);
+        const authorizationToken = await fetchTokenIfExpired();
+        
+        const promptToOptimize = typeof inputText === 'string' ? inputText : '';
+        
+        const response = await fetch(`${apiUrl}/optimizeprompt`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'authorizationToken': authorizationToken
+            },
+            body: JSON.stringify({
+                prompt: promptToOptimize,
+                targetModelId: selectedModel
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to optimize prompt');
+        }
+
+        // Extract the text from the nested response
+        const optimizedText = data.optimizedPrompt?.optimizedPrompt?.textPrompt?.text;
+        
+        if (optimizedText) {
+            // Remove extra quotes and replace \n with actual line breaks
+            const cleanText = optimizedText
+                .replace(/^"|"$/g, '') // Remove surrounding quotes
+                .replace(/\\n/g, '\n'); // Replace \n with actual line breaks
+            
+            setInputText(cleanText);
+            form.setFieldsValue({ input: cleanText });
+            
+            if (data.analysis) {
+                message.info(data.analysis);
+            }
+            
+            message.success('Prompt optimized successfully');
+        } else {
+            throw new Error('Invalid response format from optimization service');
+        }
+    } catch (error) {
+        message.error(error.message || 'Failed to optimize prompt');
+    } finally {
+        setIsOptimizing(false);
+    }
+  };
+
   return (
     <Form layout="vertical" onFinish={handleFormSubmit} form={form}>
       <div>
@@ -291,11 +344,34 @@ const Playground = ({ user }) => {
       </Row>
 
       <Form.Item label="Input" name="input">
-        <TextArea autoSize={{ minRows: 8, maxRows: 20 }} value={inputText} onChange={handleInputChange} />
+        <div>
+          <TextArea 
+            autoSize={{ minRows: 8, maxRows: 20 }} 
+            value={inputText} 
+            onChange={handleInputChange} 
+          />
+          <div style={{ marginTop: '8px' }}>
+            <Space>
+              <Button 
+                type="default"
+                onClick={handleOptimizePrompt}
+                loading={isOptimizing}
+                disabled={
+                  !inputText || 
+                  typeof inputText !== 'string' || 
+                  !inputText.length || 
+                  !['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-sonnet-20241022-v2:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0'].includes(selectedModel)
+                }
+              >
+                Optimize Prompt
+              </Button>
+              <span style={{ fontSize: '12px', color: '#888' }}>
+                {`Words: ${wordCount} | Size: ${(byteCount / 1024).toFixed(2)} KB / 124 KB`}
+              </span>
+            </Space>
+          </div>
+        </div>
       </Form.Item>
-      <div style={{ textAlign: 'right', fontSize: '12px', marginTop: '-16px' }}>
-        {`Words: ${wordCount} | Size: ${(byteCount / 1024).toFixed(2)} KB / 124 KB`}
-      </div>
 
       {renderImageUploadSection()}
 
