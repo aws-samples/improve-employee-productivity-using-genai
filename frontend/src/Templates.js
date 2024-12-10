@@ -1,4 +1,4 @@
- // nosemgrep: jsx-not-internationalized
+// nosemgrep: jsx-not-internationalized
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, List, Modal, Radio, Select, message, Typography, Spin, Tooltip  } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, InfoCircleOutlined, CopyOutlined } from '@ant-design/icons';
@@ -41,16 +41,66 @@ const Templates = ({user}) => {
   }, [])
 
   const modelOptions = [
-    { label: 'anthropic.claude-3-haiku-20240307-v1:0', value: 'anthropic.claude-3-haiku-20240307-v1:0' },
-    { label: 'anthropic.claude-3-5-haiku-20241022-v1:0', value: 'anthropic.claude-3-5-haiku-20241022-v1:0' },
-    { label: 'anthropic.claude-3-sonnet-20240229-v1:0', value: 'anthropic.claude-3-sonnet-20240229-v1:0' },
-    { label: 'anthropic.claude-3-5-sonnet-20241022-v2:0', value: 'anthropic.claude-3-5-sonnet-20241022-v2:0' },
-    { label: 'anthropic.claude-3-5-sonnet-20240620-v1:0', value: 'anthropic.claude-3-5-sonnet-20240620-v1:0' },
-    { label: 'anthropic.claude-3-opus-20240229-v1:0', value: 'anthropic.claude-3-opus-20240229-v1:0' },
-    { label: 'anthropic.claude-v2:1', value: 'anthropic.claude-v2:1' },
-    { label: 'anthropic.claude-v2', value: 'anthropic.claude-v2' },
-    { label: 'anthropic.claude-instant-v1', value: 'anthropic.claude-instant-v1' }
-    // Add more model options here...
+    {
+      id: "anthropic.claude-3-haiku-20240307-v1:0",
+      name: "anthropic.claude-3-haiku-20240307-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-3-5-haiku-20241022-v1:0",
+      name: "anthropic.claude-3-5-haiku-20241022-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-3-sonnet-20240229-v1:0",
+      name: "anthropic.claude-3-sonnet-20240229-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+      name: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+      name: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-3-opus-20240229-v1:0",
+      name: "anthropic.claude-3-opus-20240229-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "anthropic.claude-v2:1",
+      name: "anthropic.claude-v2:1",
+      supportsImages: false
+    },
+    {
+      id: "anthropic.claude-v2",
+      name: "anthropic.claude-v2",
+      supportsImages: false
+    },
+    {
+      id: "anthropic.claude-instant-v1",
+      name: "anthropic.claude-instant-v1",
+      supportsImages: false
+    },
+    {
+      id: "us.amazon.nova-micro-v1:0",
+      name: "us.amazon.nova-micro-v1:0",
+      supportsImages: false
+    },
+    {
+      id: "us.amazon.nova-lite-v1:0",
+      name: "us.amazon.nova-lite-v1:0",
+      supportsImages: true
+    },
+    {
+      id: "us.amazon.nova-pro-v1:0",
+      name: "us.amazon.nova-pro-v1:0",
+      supportsImages: true
+    }
   ];
 
   
@@ -421,8 +471,10 @@ const Templates = ({user}) => {
                 option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
             >
-              {modelOptions.map(option => (
-                <Option key={option.value} value={option.value}>{option.label}</Option>
+              {modelOptions.map(model => (
+                <Option key={model.id} value={model.id}>
+                  {model.name} {model.supportsImages ? '(Supports Images)' : ''}
+                </Option>
               ))}
             </Select>
           </Form.Item>

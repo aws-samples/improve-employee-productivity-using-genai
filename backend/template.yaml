@@ -813,6 +813,8 @@ Resources:
             - bedrock:InvokeModelWithResponseStream
           Resource: 
             - arn:aws:bedrock:*::foundation-model/*
+            - "arn:aws:bedrock:*:*:inference-profile/*"
+            - "arn:aws:bedrock:*:*:application-inference-profile/*"
         - Sid: DynamoDBPermission
           Effect: Allow
           Action:
