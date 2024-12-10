@@ -14,6 +14,69 @@ const apiUrl = process.env.REACT_APP_API_URL;
 const websocketUrl = process.env.REACT_APP_WEBSOCKET_URL;
 const MAX_IMAGES = 6; // Maximum number of images
 
+const modelOptions = [
+  {
+    id: "anthropic.claude-3-haiku-20240307-v1:0",
+    name: "anthropic.claude-3-haiku-20240307-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    name: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-sonnet-20240229-v1:0",
+    name: "anthropic.claude-3-sonnet-20240229-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    name: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    name: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-opus-20240229-v1:0",
+    name: "anthropic.claude-3-opus-20240229-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-v2:1",
+    name: "anthropic.claude-v2:1",
+    supportsImages: false
+  },
+  {
+    id: "anthropic.claude-v2",
+    name: "anthropic.claude-v2",
+    supportsImages: false
+  },
+  {
+    id: "anthropic.claude-instant-v1",
+    name: "anthropic.claude-instant-v1",
+    supportsImages: false
+  },
+  {
+    id: "us.amazon.nova-micro-v1:0",
+    name: "us.amazon.nova-micro-v1:0",
+    supportsImages: false
+  },
+  {
+    id: "us.amazon.nova-lite-v1:0",
+    name: "us.amazon.nova-lite-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "us.amazon.nova-pro-v1:0",
+    name: "us.amazon.nova-pro-v1:0",
+    supportsImages: true
+  }
+];
+
 const Activity = ({ user }) => {
   const [form] = Form.useForm();
   const [output, setOutput] = useState('');
@@ -102,16 +165,15 @@ const Activity = ({ user }) => {
     if (templateSelected) {
       setSelectedTemplateData(templateSelected);
       setModelVersion(templateSelected.modelversion);
-      setInputPlaceholder(templateSelected.templateGuidance || 'Enter your input'); // Set the input placeholder
+      setInputPlaceholder(templateSelected.templateGuidance || 'Enter your input');
       setSystemPrompt(templateSelected.systemPrompt || '');
-      // Don't set combinedData here as useEffect will take care of it
-
-      // New logic to handle model change and image support
       setSelectedModel(templateSelected.modelversion);
-      if (!['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-5-haiku-20241022-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0', 'anthropic.claude-3-5-sonnet-20241022-v2:0'].includes(templateSelected.modelversion)) {
-        setUploadedImages([]); // Clear uploaded images if model does not support them
+      
+      // Check if selected model supports images
+      const selectedModelInfo = modelOptions.find(model => model.id === templateSelected.modelversion);
+      if (!selectedModelInfo?.supportsImages) {
+        setUploadedImages([]); // Clear uploaded images if model doesn't support them
       }
-
     } else {
       console.error("Template not found");
     }
@@ -317,16 +379,14 @@ const Activity = ({ user }) => {
 
   // Conditionally render the Upload Images section
   const renderImageUploadSection = () => {
-    if (['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-5-haiku-20241022-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0', 'anthropic.claude-3-5-sonnet-20241022-v2:0'].includes(selectedModel)) {
+    // Get the selected model info from modelOptions
+    const selectedModelInfo = modelOptions.find(model => model.id === selectedModel);
+    
+    if (selectedModelInfo?.supportsImages) {
       return (
         <Form.Item>
           <Tooltip title="You can upload a maximum of 6 images">
-            <Upload
-              beforeUpload={uploadProps.beforeUpload}
-              showUploadList={uploadProps.showUploadList}
-              accept={uploadProps.accept}
-            >
-              {/* nosemgrep: jsx-not-internationalized */}
+            <Upload {...uploadProps}>
               <Button icon={<UploadOutlined />}>Upload Image(s)</Button>
             </Upload>
           </Tooltip>
@@ -429,35 +489,21 @@ const Activity = ({ user }) => {
             <Col span={24}>
               <Form.Item label="Model Selection" name="modelId">
                 <Select
-                  defaultValue="anthropic.claude-3-haiku-20240307-v1:0"
+                  defaultValue={modelOptions[0].id}
                   onChange={(value) => {
                     setModelVersion(value);
-                    setSelectedModel(value); // Ensure this updates the selectedModel state
-
-                    // If the new model does not support image uploads, clear any selected images
-                    if (!['anthropic.claude-3-haiku-20240307-v1:0', 'anthropic.claude-3-sonnet-20240229-v1:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0', 'anthropic.claude-3-5-sonnet-20241022-v2:0'].includes(value)) {
-                      setUploadedImages([]); // Clear uploaded images if model does not support them
+                    setSelectedModel(value);
+                    const selectedModelInfo = modelOptions.find(model => model.id === value);
+                    if (!selectedModelInfo?.supportsImages) {
+                      setUploadedImages([]); // Clear uploaded images if model doesn't support them
                     }
                   }}
                 >
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-haiku-20240307-v1:0">anthropic.claude-3-haiku-20240307-v1:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-5-haiku-20241022-v1:0">anthropic.claude-3-5-haiku-20241022-v1:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-sonnet-20240229-v1:0">anthropic.claude-3-sonnet-20240229-v1:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-5-sonnet-20241022-v2:0">anthropic.claude-3-5-sonnet-20241022-v2:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-5-sonnet-20240620-v1:0">anthropic.claude-3-5-sonnet-20240620-v1:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-3-opus-20240229-v1:0">anthropic.claude-3-opus-20240229-v1:0</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-v2:1">anthropic.claude-v2:1</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-v2">anthropic.claude-v2</Option>
-                  {/* nosemgrep: jsx-not-internationalized */}
-                  <Option value="anthropic.claude-instant-v1">anthropic.claude-instant-v1</Option>
+                  {modelOptions.map(model => (
+                    <Option key={model.id} value={model.id}>
+                      {model.name} {model.supportsImages ? '(Supports Images)' : ''}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

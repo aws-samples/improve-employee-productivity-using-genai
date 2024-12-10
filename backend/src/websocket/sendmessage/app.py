@@ -7,14 +7,23 @@ import base64
 from botocore.exceptions import ClientError
 
 def get_images_from_s3_as_base64(image_keys):
-    """Download images from S3 and convert to base64."""
+    """Download images from S3 and return raw bytes."""
     s3 = boto3.client('s3')
     image_data_list = []
     for key in image_keys:
         try:
             response = s3.get_object(Bucket=os.environ['IMAGE_UPLOAD_BUCKET'], Key=key)
-            image_data = response['Body'].read()
-            image_data_list.append(base64.b64encode(image_data).decode('utf-8'))
+            image_data = response['Body'].read()  # Get raw bytes
+            # Get the file extension and normalize jpg to jpeg
+            image_format = key.split('.')[-1].lower()
+            if image_format == 'jpg':
+                image_format = 'jpeg'
+            
+            # Store both the raw bytes and the normalized format
+            image_data_list.append({
+                'data': image_data,  # Store raw bytes instead of base64
+                'format': image_format
+            })
         except Exception as e:
             print(f"Error getting object {key}.", str(e))
             image_data_list.append(None)
@@ -70,72 +79,59 @@ def handler(event, context):
 
     # Prepare the request for Bedrock
     if action == 'sendmessage':
+        messages_content = []
 
-        # Prepare the request for Bedrock, including the optional image
-        messages_content = [
-            {
-             "type": "text", 
-             "text": data
-            }
-        ]
+        if data:
+            messages_content.append({"text": data})
 
         if image_s3_keys:
-            for image_base64 in images_base64:
-                messages_content.append({
-                    "type": "image",
-                    "source": {"type": "base64", "media_type": "image/jpeg", "data": image_base64}
-                })
-    
+            for image_info in images_base64:
+                if image_info:  # Check if image was successfully retrieved
+                    messages_content.append({
+                        "image": {
+                            "format": image_info['format'],
+                            "source": {
+                                "bytes": image_info['data']  # Raw bytes
+                            }
+                        }
+                    })
+
         message = [
             {
-                "role": "user", 
+                "role": "user",
                 "content": messages_content
             }
         ]
-    
-        # Prepare the JSON payload for Bedrock
-        bedrock_request_dict = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "messages": message,
-            "max_tokens": max_tokens_to_sample,
-            "temperature": temperature,
-            "top_k": top_k,
-            "top_p": top_p
-        }
 
-        # Only add 'system' to payload if it was provided
-        if system_prompt:
-            bedrock_request_dict["system"] = system_prompt
-
-        # Now convert the dictionary to a JSON string
-        bedrock_payload = json.dumps(bedrock_request_dict)
-        
-        accept = "application/json"
-        contentType = "application/json"
-        
         # Initialize a list to collect text chunks
         text_chunks = []
-        
-        # Invoke Bedrock model
+
+        # Invoke Bedrock model using ConverseStream
         try:
-            response = boto3_bedrock.invoke_model_with_response_stream(body=bedrock_payload, modelId=modelId, accept=accept, contentType=contentType)
-            stream = response.get('body')
+            response = boto3_bedrock.converse_stream(
+                modelId=modelId,
+                messages=message,  # Pass the message directly
+                inferenceConfig={
+                    "maxTokens": max_tokens_to_sample,
+                    "temperature": temperature,
+                    "topP": top_p
+                }
+            )
+            stream = response.get('stream')
             if stream:
-                for event in stream:
-                    chunk = json.loads(event["chunk"]["bytes"])
-                    if chunk['type'] == 'content_block_delta':
-                        if chunk['delta']['type'] == 'text_delta':
-                            text = chunk['delta'].get('text', '')
-                            if text:
-                                # Append text to the list
-                                text_chunks.append(text)
-    
-                                # Wrap text in JSON structure
-                                response_message = json.dumps({"messages": text})
-                                api_gateway_management_api.post_to_connection(
-                                    ConnectionId=connection_id,
-                                    Data=response_message
-                                )
+                for chunk in stream:
+                    if "contentBlockDelta" in chunk:
+                        text = chunk["contentBlockDelta"]["delta"]["text"]
+                        if text:
+                            # Append text to the list
+                            text_chunks.append(text)
+
+                            # Wrap text in JSON structure
+                            response_message = json.dumps({"messages": text})
+                            api_gateway_management_api.post_to_connection(
+                                ConnectionId=connection_id,
+                                Data=response_message
+                            )
 
             # Join all text chunks into a single string
             complete_text = ''.join(text_chunks)

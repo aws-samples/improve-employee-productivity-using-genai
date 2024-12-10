@@ -13,6 +13,70 @@ const { TextArea } = Input;
 const apiUrl = process.env.REACT_APP_API_URL;
 const MAX_IMAGES = 11; // Maximum number of images
 
+// Add this new constant for available models
+const AVAILABLE_MODELS = [
+  {
+    id: "anthropic.claude-3-haiku-20240307-v1:0",
+    name: "anthropic.claude-3-haiku-20240307-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    name: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-sonnet-20240229-v1:0",
+    name: "anthropic.claude-3-sonnet-20240229-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    name: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    name: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-3-opus-20240229-v1:0",
+    name: "anthropic.claude-3-opus-20240229-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "anthropic.claude-v2:1",
+    name: "anthropic.claude-v2:1",
+    supportsImages: false
+  },
+  {
+    id: "anthropic.claude-v2",
+    name: "anthropic.claude-v2",
+    supportsImages: false
+  },
+  {
+    id: "anthropic.claude-instant-v1",
+    name: "anthropic.claude-instant-v1",
+    supportsImages: false
+  },
+  {
+    id: "us.amazon.nova-micro-v1:0",
+    name: "us.amazon.nova-micro-v1:0",
+    supportsImages: false
+  },
+  {
+    id: "us.amazon.nova-lite-v1:0",
+    name: "us.amazon.nova-lite-v1:0",
+    supportsImages: true
+  },
+  {
+    id: "us.amazon.nova-pro-v1:0",
+    name: "us.amazon.nova-pro-v1:0",
+    supportsImages: true
+  }
+];
+
 const Playground = ({ user }) => {
   const [form] = Form.useForm();
   const [output, setOutput] = useState('');
@@ -30,7 +94,7 @@ const Playground = ({ user }) => {
   const [uploadedImages, setUploadedImages] = useState([]);
   const MAX_BYTE_SIZE = 124 * 1024; // 124KB in bytes
   const [inputText, setInputText] = useState(''); // New state for controlling the input text
-  const [selectedModel, setSelectedModel] = useState("anthropic.claude-3-haiku-20240307-v1:0"); // Track selected model
+  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const userId = user?.userId; // Assuming the user ID is available here
 
   const [systemMessage, setSystemMessage] = useState(''); // State for storing the system message
@@ -208,17 +272,19 @@ const Playground = ({ user }) => {
 
   const handleModelSelect = (value) => {
     setSelectedModel(value);
-    if (value !== 'anthropic.claude-3-haiku-20240307-v1:0' && value !== 'anthropic.claude-3-5-haiku-20241022-v1:0' && value !== 'anthropic.claude-3-sonnet-20240229-v1:0' && value !== 'anthropic.claude-3-opus-20240229-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20240620-v1:0' && value !== 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
+    const selectedModelInfo = AVAILABLE_MODELS.find(model => model.id === value);
+    if (!selectedModelInfo?.supportsImages) {
       setUploadedImages([]);
     }
   };
 
   const renderImageUploadSection = () => {
-    if (selectedModel === 'anthropic.claude-3-haiku-20240307-v1:0' || selectedModel === 'anthropic.claude-3-5-haiku-20241022-v1:0' || selectedModel === 'anthropic.claude-3-sonnet-20240229-v1:0' || selectedModel === 'anthropic.claude-3-opus-20240229-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20240620-v1:0' || selectedModel === 'anthropic.claude-3-5-sonnet-20241022-v2:0') {
+    const selectedModelInfo = AVAILABLE_MODELS.find(model => model.id === selectedModel);
+    if (selectedModelInfo?.supportsImages) {
       return (
         <Form.Item>
           <Tooltip title="You can upload a maximum of 6 images">
-            <Upload beforeUpload={uploadProps.beforeUpload} showUploadList={uploadProps.showUploadList} accept={uploadProps.accept}>
+            <Upload {...uploadProps}>
               <Button icon={<UploadOutlined />}>Upload Image(s)</Button>
             </Upload>
           </Tooltip>
@@ -271,16 +337,10 @@ const Playground = ({ user }) => {
       <br />
 
       <Form.Item label="Model Selection" name="modelId">
-        <Select defaultValue="anthropic.claude-3-haiku-20240307-v1:0" onSelect={handleModelSelect}>
-          <Option value="anthropic.claude-3-haiku-20240307-v1:0">anthropic.claude-3-haiku-20240307-v1:0</Option>
-          <Option value="anthropic.claude-3-5-haiku-20241022-v1:0">anthropic.claude-3-5-haiku-20241022-v1:0</Option>
-          <Option value="anthropic.claude-3-sonnet-20240229-v1:0">anthropic.claude-3-sonnet-20240229-v1:0</Option>
-          <Option value="anthropic.claude-3-5-sonnet-20241022-v2:0">anthropic.claude-3-5-sonnet-20241022-v2:0</Option>
-          <Option value="anthropic.claude-3-5-sonnet-20240620-v1:0">anthropic.claude-3-5-sonnet-20240620-v1:0</Option>
-          <Option value="anthropic.claude-3-opus-20240229-v1:0">anthropic.claude-3-opus-20240229-v1:0</Option>
-          <Option value="anthropic.claude-v2:1">anthropic.claude-v2:1</Option>
-          <Option value="anthropic.claude-v2">anthropic.claude-v2</Option>
-          <Option value="anthropic.claude-instant-v1">anthropic.claude-instant-v1</Option>
+        <Select defaultValue={AVAILABLE_MODELS[0].id} onSelect={handleModelSelect}>
+          {AVAILABLE_MODELS.map(model => (
+            <Option key={model.id} value={model.id}>{model.name}</Option>
+          ))}
         </Select>
       </Form.Item>
 
