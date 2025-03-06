@@ -1,5 +1,7 @@
 # Employee Productivity GenAI Assistant Example 🌌
 
+> **⚠️ DISCLAIMER:** This branch contains experimental features that require newer versions of the boto3 library (specifically for Claude 3.7 Sonnet thinking/reasoning mode). It is not fully deployable on its own as it requires manual updates to the Lambda function's boto3 version. We will merge to main once AWS Lambda includes boto3 versions with built-in support for extended thinking models by default.
+
 ## Table of Contents
 1. [Summary](#summary-) 
 2. [Architecture Diagram](#architecture-diagram-%EF%B8%8F)
@@ -10,11 +12,12 @@
 7. [How to Deploy via AWS Cloud9](#how-to-deploy-via-aws-cloud9-%EF%B8%8F)
 8. [Post Deployment Steps](#post-deployment-steps-%EF%B8%8F)
 9. [Tool Demo (GIFs)](#employee-productivity-genai-assistant-example-demo-gifs-)
-10. [Cost Estimation](#cost-estimation-)
-11. [Acknowledgements](#acknowledgements-)
-12. [License](#license-)
-13. [Contributing](#contributing-)
-14. [Key Considerations](#key-considerations-)
+10. [New Features](#new-features-)
+11. [Cost Estimation](#cost-estimation-)
+12. [Acknowledgements](#acknowledgements-)
+13. [License](#license-)
+14. [Contributing](#contributing-)
+15. [Key Considerations](#key-considerations-)
 
 ## Summary 📝
 
@@ -31,6 +34,8 @@ Employee Productivity GenAI Assistant Example showcases its functionalities thro
 - **Interactive Chat with Templates:** Enhances the utility of templates through a chat interface, allowing users to refine outputs using natural language interactions.
 - **Multi-Modality Input:** Supports the upload and use of up to six images, providing inputs for AI models to generate rich, context-aware responses.
 - **Markdown Output Formatting:** Enhances readability and structure of AI-generated content by supporting markdown formatting in the output. This feature allows for better organization of information, including headers, lists, code blocks, and more, directly in the assistant's responses.
+- **Claude 3.7 Thinking Mode:** Reveals Claude's step-by-step thinking process in real-time, with configurable token budgets and interactive controls across all components.
+- **Comprehensive Metrics:** Track token usage, latency, and performance metrics throughout the application, enabling better resource optimization and cost management.
 
 
 By providing a streamlined interface and comprehensive tools, Employee Productivity GenAI Assistant Example not only simplifies the generation of complex documents but also enhances user productivity and creativity. This GitHub repository serves as a guide for deploying this solution on user-owned AWS accounts, ensuring that anyone can set up and start benefiting from the advanced capabilities of this AI-powered writing assistant.
@@ -352,7 +357,62 @@ Explore the capabilities of Employee Productivity GenAI Assistant Example with t
 
 These tools are designed to boost your productivity and creativity by streamlining your interaction with AI models in a serverless environment.
 
-# Cost Estimation 💰
+## New Features 🚀
+
+This application includes several powerful new capabilities that enhance functionality and transparency across all components:
+
+### Claude 3.7 Thinking Mode Support
+
+The application now supports Claude 3.7 Sonnet's powerful thinking/reasoning capabilities across Playground, Activity, and Templates:
+
+- **Real-time Reasoning Display**: Watch Claude's step-by-step thinking process as it solves problems in a dedicated panel
+- **Configurable Thinking Budget**: Adjust the thinking budget from 1K to 24K tokens to control depth of reasoning
+- **Interactive Controls**: Collapsible thinking panel with show/hide toggles and copy functionality
+- **Optimized Settings**: Automatic temperature adjustment to 1.0 for optimal thinking performance
+- **Expanded Token Limits**: Increased max token limit to 32K by default (up to 64K) for Claude 3.7 models
+- **Template Integration**: Create and share templates with thinking mode pre-enabled
+
+![Thinking Mode](backend/artifacts/thinking-mode.png)
+
+### Token Usage Tracking
+
+All sections now provide comprehensive token usage statistics:
+
+- **Real-time Token Monitoring**: View input, output, and total token usage as the model generates responses
+- **Historical Token Analytics**: Review token usage for past conversations in the History view
+- **Cost Awareness**: Better understand resource utilization for different types of queries
+- **Model Efficiency Comparison**: Compare token efficiency across different models and templates
+
+### Latency Metrics
+
+Get insights into model response performance throughout the application:
+
+- **Response Time Tracking**: Monitor how long model responses take in milliseconds
+- **Historical Latency Data**: Review latency metrics for past conversations
+- **Performance Benchmarking**: Compare response times across different models and prompt types
+- **Template Performance**: Analyze which templates provide the fastest responses
+
+### Prompt Optimizer
+
+Enhance your prompts with one-click optimization:
+
+- **Model-specific Improvements**: Optimize prompts for specific target models
+- **Prompt Analysis**: Get insights on how to improve your prompts
+- **Direct Application**: Apply optimized prompts with a single click
+- **Better Results**: Achieve more effective and efficient responses
+
+### Consistent User Experience
+
+All new features have been integrated seamlessly across the entire application:
+
+- **Playground**: Experiment with all features in a sandbox environment
+- **Activity**: Apply templates with thinking mode, token tracking, and latency monitoring
+- **Templates**: Create and save templates with thinking mode configuration
+- **History**: Review comprehensive metrics for past interactions
+
+These features work together to provide deeper insights into model performance, enhance the quality of interactions, and improve productivity throughout the application.
+
+## Cost Estimation 💰
 
 The cost of running the Employee Productivity GenAI Assistant Example can vary based on your usage patterns and the specific Amazon Bedrock models you choose to utilize. To provide a rough estimate, we've created a cost estimator link that considers a scenario with 50 users, each utilizing the tool 5 times a day with an average of 500 input tokens and 200 output tokens.
 
@@ -395,6 +455,11 @@ Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon
   - Bedrock: $168.75
   - Other AWS Services: $16.51
   - **Total**: $185.26
+
+- **Claude 3.7 Sonnet (with Thinking Mode)**:
+  - Bedrock: $75.00 (including thinking tokens)
+  - Other AWS Services: $16.51
+  - **Total**: $91.51
 
 > **Notes**: While the cost estimates are calculated using a single model, you have the flexibility to switch between models as needed. For example, if you require a more advanced model like Opus for a specific request, you'll only be charged for that usage. For most requests, you can utilize more cost-optimized models like Haiku, which will help keep the overall cost of the tool lower and optimized for your needs.
 

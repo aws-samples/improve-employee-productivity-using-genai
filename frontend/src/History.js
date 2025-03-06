@@ -1,7 +1,7 @@
 // nosemgrep: jsx-not-internationalized
 
 import React, { useState, useEffect } from "react";
-import { Table, Button, message, Modal, Input, Typography } from "antd";
+import { Table, Button, message, Modal, Input, Typography, Row, Col, Statistic, Card } from "antd";
 import { fetchTokenIfExpired } from "./utils/authHelpers"; // Ensure this path is correct
 import { CopyOutlined } from "@ant-design/icons";
 import ReactMarkdown from 'react-markdown';
@@ -143,6 +143,16 @@ const History = ({ user }) => {
       }).join(', '); // Combine names into a single string
     }
 
+    // Set default token usage values if not available
+    if (!record.tokenUsage) {
+      record.tokenUsage = { inputTokens: 0, outputTokens: 0 };
+    }
+    
+    // Set default latency values if not available
+    if (!record.latency) {
+      record.latency = { latencyMs: 0 };
+    }
+
     setCurrentRecord(record);
     setIsModalVisible(true);
   };
@@ -186,6 +196,27 @@ const History = ({ user }) => {
       render: (text) => <div className="truncate-multiline">{text}</div>,
       width: 400,
       responsive: ["lg"],
+    },
+    {
+      title: "Tokens",
+      key: "tokens",
+      width: 80,
+      responsive: ["md"],
+      render: (_, record) => {
+        if (!record.tokenUsage) return "N/A";
+        const total = (record.tokenUsage.inputTokens || 0) + (record.tokenUsage.outputTokens || 0);
+        return total > 0 ? total.toLocaleString() : "N/A";
+      },
+    },
+    {
+      title: "Latency",
+      key: "latency",
+      width: 80,
+      responsive: ["lg"],
+      render: (_, record) => {
+        if (!record.latency || !record.latency.latencyMs) return "N/A";
+        return `${record.latency.latencyMs.toLocaleString()} ms`;
+      },
     },
     {
       title: "View",
@@ -256,6 +287,56 @@ const History = ({ user }) => {
     return '';
   };
 
+  // Add a function to render metrics display (token usage and latency)
+  const renderMetrics = (tokenUsage, latency) => {
+    const hasTokens = tokenUsage && (tokenUsage.inputTokens > 0 || tokenUsage.outputTokens > 0);
+    const hasLatency = latency && latency.latencyMs > 0;
+    
+    if (!hasTokens && !hasLatency) {
+      return <div>No metrics data available</div>;
+    }
+    
+    const totalTokens = hasTokens ? tokenUsage.inputTokens + tokenUsage.outputTokens : 0;
+    
+    return (
+      <Card size="small" style={{ marginBottom: '16px', background: '#f9f9f9' }}>
+        <Row gutter={16}>
+          {hasTokens && (
+            <>
+              <Col span={6}>
+                <Statistic 
+                  title="Input Tokens" 
+                  value={tokenUsage.inputTokens} 
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic 
+                  title="Output Tokens" 
+                  value={tokenUsage.outputTokens} 
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic 
+                  title="Total Tokens" 
+                  value={totalTokens} 
+                />
+              </Col>
+            </>
+          )}
+          {hasLatency && (
+            <Col span={6}>
+              <Statistic 
+                title="Latency" 
+                value={latency.latencyMs} 
+                suffix="ms"
+              />
+            </Col>
+          )}
+        </Row>
+      </Card>
+    );
+  };
+
   return (
     <div>
       {/* nosemgrep: jsx-not-internationalized */}
@@ -312,28 +393,35 @@ const History = ({ user }) => {
           <b>Model:</b>
         </p>
         <Input value={currentRecord.modelId} readOnly />
-         {/* Conditionally render System Prompt if it exists */}
-          {currentRecord.systemPrompt && (
-            <>
-              <p>
-                {/* nosemgrep: jsx-not-internationalized */}
-                <b>System Prompt:</b>
-              </p>
-              <div className="input-with-copy-icon">
-                <Input.TextArea
-                  value={currentRecord.systemPrompt}
-                  readOnly
-                  style={{ resize: "vertical", width: "100%", minHeight: "100px" }}
-                />
-                <span
-                  className="copy-icon"
-                  onClick={() => copyToClipboard(currentRecord.systemPrompt)}
-                >
-                  <CopyOutlined />
-                </span>
-              </div>
-            </>
-          )}
+        
+        {/* Add Metrics Display (Token Usage and Latency) */}
+        <p>
+          <b>Metrics:</b>
+        </p>
+        {renderMetrics(currentRecord.tokenUsage, currentRecord.latency)}
+        
+        {/* Conditionally render System Prompt if it exists */}
+        {currentRecord.systemPrompt && (
+          <>
+            <p>
+              {/* nosemgrep: jsx-not-internationalized */}
+              <b>System Prompt:</b>
+            </p>
+            <div className="input-with-copy-icon">
+              <Input.TextArea
+                value={currentRecord.systemPrompt}
+                readOnly
+                style={{ resize: "vertical", width: "100%", minHeight: "100px" }}
+              />
+              <span
+                className="copy-icon"
+                onClick={() => copyToClipboard(currentRecord.systemPrompt)}
+              >
+                <CopyOutlined />
+              </span>
+            </div>
+          </>
+        )}
         <p>
           {/* nosemgrep: jsx-not-internationalized */}
           <b>User Data:</b>
@@ -427,6 +515,51 @@ const History = ({ user }) => {
     <CopyOutlined />
   </span>
 </div>
+
+        {/* Display thinking content if available */}
+        {currentRecord.thinking && (
+          <>
+            <p>
+              {/* nosemgrep: jsx-not-internationalized */}
+              <b>Claude's Thinking Process:</b>
+            </p>
+            <div className="input-with-copy-icon" style={{ position: 'relative', minHeight: '200px' }}>
+              <div
+                style={{
+                  resize: 'vertical',
+                  width: '100%',
+                  minHeight: '200px',
+                  maxHeight: '400px',
+                  overflow: 'auto',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '4px',
+                  padding: '9px 11px',
+                  background: '#f0f0f0',
+                }}
+              >
+                <ReactMarkdown
+                  className="markdown-body"
+                  rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
+                >
+                  {currentRecord.thinking}
+                </ReactMarkdown>
+              </div>
+              <span
+                className="copy-icon"
+                onClick={() => copyToClipboard(currentRecord.thinking)}
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <CopyOutlined />
+              </span>
+            </div>
+          </>
+        )}
+
         <p />
         <Text>
           {/* nosemgrep: jsx-not-internationalized */}

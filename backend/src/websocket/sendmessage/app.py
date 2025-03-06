@@ -52,7 +52,12 @@ def handler(event, context):
     modelId = body.get('modelId', "anthropic.claude-3-haiku-20240307-v1:0")
     top_k = body.get('top_k', 250)
     top_p = body.get('top_p', 0.999)
-
+    
+    # Retrieve thinking mode parameters
+    thinking_enabled = body.get('thinking_enabled', False)
+    print("Thinking enabled:", thinking_enabled)
+    thinking_budget_tokens = body.get('thinking_budget_tokens', 16000)
+    print("Thinking budget tokens:", thinking_budget_tokens)
     # Extract necessary information
     email = event['requestContext']['authorizer']['principalId']
     source_ip = event['requestContext']['identity']['sourceIp']
@@ -103,39 +108,164 @@ def handler(event, context):
             }
         ]
 
-        # Initialize a list to collect text chunks
+        # Initialize lists to collect text chunks and thinking chunks
         text_chunks = []
+        thinking_chunks = []
+        current_thinking = ""
+        
+        # Initialize token usage and latency tracking
+        input_tokens = 0
+        output_tokens = 0
+        latency_ms = 0
+
+        # Prepare inference config
+        inference_config = {
+            "maxTokens": max_tokens_to_sample,
+            "temperature": temperature,
+            "topP": top_p
+        }
+
+        # Prepare additional model request fields for Claude 3.7 Sonnet thinking mode
+        additional_model_request_fields = None
+        if thinking_enabled and "claude-3-7" in modelId:
+            print("Thinking enabled for Claude 3.7 model")
+            additional_model_request_fields = {
+                "reasoning_config": {
+                    "type": "enabled",
+                    "budget_tokens": thinking_budget_tokens
+                }
+            }
+        elif thinking_enabled and modelId == "us.anthropic.claude-3-7-sonnet-20250219-v1:0":
+            # This is for backward compatibility
+            print("Thinking enabled for Claude 3.7 Sonnet")
+            additional_model_request_fields = {
+                "reasoning_config": {
+                    "type": "enabled",
+                    "budget_tokens": thinking_budget_tokens
+                }
+            }
 
         # Invoke Bedrock model using ConverseStream
         try:
-            response = boto3_bedrock.converse_stream(
-                modelId=modelId,
-                messages=message,  # Pass the message directly
-                inferenceConfig={
-                    "maxTokens": max_tokens_to_sample,
-                    "temperature": temperature,
-                    "topP": top_p
-                }
-            )
+            # Prepare the API call arguments
+            converse_args = {
+                "modelId": modelId,
+                "messages": message,
+                "inferenceConfig": inference_config
+            }
+            
+            # Add additionalModelRequestFields only if thinking is enabled
+            if additional_model_request_fields:
+                converse_args["additionalModelRequestFields"] = additional_model_request_fields
+                
+            # Add system prompt if provided
+            if system_prompt:
+                converse_args["system"] = system_prompt
+                
+            # Make the API call
+            response = boto3_bedrock.converse_stream(**converse_args)
+            
             stream = response.get('stream')
             if stream:
                 for chunk in stream:
-                    if "contentBlockDelta" in chunk:
-                        text = chunk["contentBlockDelta"]["delta"]["text"]
-                        if text:
-                            # Append text to the list
-                            text_chunks.append(text)
-
-                            # Wrap text in JSON structure
-                            response_message = json.dumps({"messages": text})
+                    # Track token usage and latency if available in metadata
+                    if 'metadata' in chunk:
+                        if 'usage' in chunk['metadata']:
+                            if 'inputTokens' in chunk['metadata']['usage']:
+                                input_tokens = chunk['metadata']['usage']['inputTokens']
+                                print(f"Input tokens: {input_tokens}")
+                            if 'outputTokens' in chunk['metadata']['usage']:
+                                output_tokens = chunk['metadata']['usage']['outputTokens']
+                                print(f"Output tokens: {output_tokens}")
+                        
+                        # Track latency metrics
+                        if 'metrics' in chunk['metadata']:
+                            if 'latencyMs' in chunk['metadata']['metrics']:
+                                latency_ms = chunk['metadata']['metrics']['latencyMs']
+                                print(f"Latency (ms): {latency_ms}")
+                            
+                        # Send token usage and latency info to client
+                        if input_tokens > 0 or output_tokens > 0 or latency_ms > 0:
+                            metrics_message = json.dumps({
+                                "metrics": {
+                                    "tokenUsage": {
+                                        "inputTokens": input_tokens,
+                                        "outputTokens": output_tokens
+                                    },
+                                    "latency": {
+                                        "latencyMs": latency_ms
+                                    }
+                                }
+                            })
                             api_gateway_management_api.post_to_connection(
                                 ConnectionId=connection_id,
-                                Data=response_message
+                                Data=metrics_message
                             )
+                                
+                    if "contentBlockDelta" in chunk:
+                        delta = chunk["contentBlockDelta"]["delta"]
+                        
+                        # Handle text delta
+                        if "text" in delta:
+                            text = delta["text"]
+                            if text:
+                                # Append text to the list
+                                text_chunks.append(text)
+
+                                # Wrap text in JSON structure
+                                response_message = json.dumps({"messages": text})
+                                api_gateway_management_api.post_to_connection(
+                                    ConnectionId=connection_id,
+                                    Data=response_message
+                                )
+                        
+                        # Handle reasoning content for Claude 3.7
+                        elif "reasoningContent" in delta and "text" in delta["reasoningContent"]:
+                            thinking_text = delta["reasoningContent"]["text"]
+                            if thinking_text:
+                                print("Reasoning text:", thinking_text)
+                                # Append thinking to the list
+                                thinking_chunks.append(thinking_text)
+                                current_thinking += thinking_text
+                                
+                                # Send thinking separately
+                                thinking_message = json.dumps({"thinking": thinking_text})
+                                print("Thinking message:", thinking_message)
+                                api_gateway_management_api.post_to_connection(
+                                    ConnectionId=connection_id,
+                                    Data=thinking_message
+                                )
+                                
+                    # Legacy thinking content handling
+                    elif "thinking" in chunk:
+                        thinking_text = chunk["thinking"].get("thinking_delta")
+                        if thinking_text:
+                            print("Thinking text:", thinking_text)
+                            # Append thinking to the list
+                            thinking_chunks.append(thinking_text)
+                            current_thinking += thinking_text
+                            
+                            # Send thinking separately
+                            thinking_message = json.dumps({"thinking": thinking_text})
+                            print("Thinking message:", thinking_message)
+                            api_gateway_management_api.post_to_connection(
+                                ConnectionId=connection_id,
+                                Data=thinking_message
+                            )
+                    
+                    # Handle redacted thinking (for safety filtered content)
+                    elif "redacted_thinking" in chunk:
+                        # Just send a notification that thinking was redacted
+                        print("Redacted thinking detected")
+                        redacted_message = json.dumps({"redacted_thinking": True})
+                        api_gateway_management_api.post_to_connection(
+                            ConnectionId=connection_id,
+                            Data=redacted_message
+                        )
 
             # Join all text chunks into a single string
             complete_text = ''.join(text_chunks)
-            
+            complete_thinking = ''.join(thinking_chunks)
             
             # Prepare the item to insert into DynamoDB
             item_to_insert = {
@@ -149,6 +279,24 @@ def handler(event, context):
                 'userAgent': user_agent,
                 'completion': complete_text
             }
+            
+            # Add token usage to the database item
+            if input_tokens > 0 or output_tokens > 0:
+                item_to_insert['tokenUsage'] = {
+                    'inputTokens': input_tokens,
+                    'outputTokens': output_tokens
+                }
+                
+            # Add latency to the database item
+            if latency_ms > 0:
+                item_to_insert['latency'] = {
+                    'latencyMs': latency_ms
+                }
+
+            # Add thinking if available
+            if complete_thinking:
+                print("Adding thinking to item:", complete_thinking)
+                item_to_insert['thinking'] = complete_thinking
 
             # Add the imageS3Key to the item if it exists
             if image_s3_keys:

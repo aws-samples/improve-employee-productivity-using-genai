@@ -1,4 +1,4 @@
- // nosemgrep: jsx-not-internationalized
+// nosemgrep: jsx-not-internationalized
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -29,7 +29,7 @@ const { Option } = Select;
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const ChatMessage = ({ text, sender }) => {
+const ChatMessage = ({ text, sender, isThinking }) => {
   const [isHovering, setIsHovering] = useState(false);
 
   const copyToClipboard = (text) => {
@@ -126,13 +126,14 @@ const ChatMessage = ({ text, sender }) => {
       <Avatar icon={sender === "user" ? <UserOutlined /> : <RobotOutlined />} />
       <div
         style={{
-          backgroundColor: sender === "user" ? "lightgreen" : "lightblue",
+          backgroundColor: isThinking ? "#f0f8ff" : sender === "user" ? "lightgreen" : "lightblue",
           margin: "0 10px",
           padding: "5px 10px",
           borderRadius: "10px",
           wordWrap: "break-word",
           maxWidth: "70%",
           position: "relative",
+          border: isThinking ? "1px dashed #1890ff" : "none",
         }}
       >
         {renderContent()}
@@ -187,6 +188,10 @@ const Chat = ({ user }) => {
   const thinkingMessageId = -1; // A unique ID for the thinking message
   const [websocketStatus, setWebsocketStatus] = useState("Connecting");
   const [systemPrompt, setSystemPrompt] = useState(""); // State to store the system prompt
+  const [thinkingEnabled, setThinkingEnabled] = useState(false);
+  const [thinkingBudgetTokens, setThinkingBudgetTokens] = useState(16000);
+  const [currentThinking, setCurrentThinking] = useState("");
+  const [showThinking, setShowThinking] = useState(true);
 
 
   const wsRef = useRef(null);
@@ -239,33 +244,50 @@ const Chat = ({ user }) => {
             console.error(messageData.error);
             message.error(messageData.error);
             setIsLoading(false);
-            setIsWaitingForMessage(false); // Stop showing the loading spin on error
+            setIsWaitingForMessage(false);
             setMessages((prevMessages) => {
-              // Remove the temporary loading message
               return prevMessages.filter((msg) => msg.id !== thinkingMessageId);
             });
-            ongoingBotMessageId.current = null; // Reset the ongoing message ID
+            ongoingBotMessageId.current = null;
+            return;
+          }
+
+          if (messageData.thinking) {
+            setCurrentThinking((prev) => prev + messageData.thinking);
+            return;
+          }
+
+          if (messageData.redacted_thinking) {
+            message.info("Some thinking content was redacted for safety reasons");
             return;
           }
 
           if (messageData.messages) {
             if (ongoingBotMessageId.current === null) {
-              // Start a new bot message and stop showing the loading spin
               setIsWaitingForMessage(false);
               const newMessageId = nextMessageId.current++;
+              
               setMessages((prevMessages) => {
-                // Remove the temporary loading message
-                return prevMessages
-                  .filter((msg) => msg.id !== thinkingMessageId)
-                  .concat({
-                    id: newMessageId,
-                    text: messageData.messages,
+                const newMessages = prevMessages.filter((msg) => msg.id !== thinkingMessageId);
+                
+                if (currentThinking && showThinking) {
+                  newMessages.push({
+                    id: newMessageId - 0.5,
+                    text: `💭 **Claude's Thinking Process:**\n\n${currentThinking}`,
                     sender: "bot",
+                    isThinking: true
                   });
+                }
+                
+                return newMessages.concat({
+                  id: newMessageId,
+                  text: messageData.messages,
+                  sender: "bot"
+                });
               });
+              
               ongoingBotMessageId.current = newMessageId;
             } else {
-              // Update the ongoing bot message with new chunks
               setMessages((prevMessages) =>
                 prevMessages.map((msg) =>
                   msg.id === ongoingBotMessageId.current
@@ -277,8 +299,9 @@ const Chat = ({ user }) => {
           }
 
           if (messageData.endOfMessage) {
-            ongoingBotMessageId.current = null; // Reset for the next bot message
+            ongoingBotMessageId.current = null;
             setIsLoading(false);
+            setCurrentThinking("");
           }
         } catch (error) {
           console.error("Error processing WebSocket message:", error);
@@ -421,14 +444,16 @@ const Chat = ({ user }) => {
 
         const messagePayload = {
           action: "chat",
-          data: sendData, // Use inputValue as the prompt data
+          data: sendData,
           max_tokens_to_sample: maxTokensToSample,
           temperature: temperature,
           modelId: modelVersion,
           top_k: topK,
           top_p: topP,
           session_id: sessionIdRef.current,
-          system_prompt: systemPrompt 
+          system: systemPrompt,
+          thinking_enabled: thinkingEnabled && modelVersion === "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+          thinking_budget_tokens: thinkingBudgetTokens
         };
 
         wsRef.current.send(JSON.stringify(messagePayload));
@@ -570,7 +595,7 @@ const Chat = ({ user }) => {
               <List
                 dataSource={messages}
                 renderItem={(item) => (
-                  <ChatMessage text={item.text} sender={item.sender} />
+                  <ChatMessage text={item.text} sender={item.sender} isThinking={item.isThinking} />
                 )}
               />
             </div>
@@ -705,6 +730,10 @@ const Chat = ({ user }) => {
                         <Option value="anthropic.claude-v1">
                           anthropic.claude-v1
                         </Option>
+                        {/* nosemgrep: jsx-not-internationalized */}
+                        <Option value="us.anthropic.claude-3-7-sonnet-20250219-v1:0">
+                          us.anthropic.claude-3-7-sonnet-20250219-v1:0
+                        </Option>
                       </Select>
                     </Form.Item>
                   </Col>
@@ -771,6 +800,40 @@ const Chat = ({ user }) => {
                     placeholder="Enter system prompt (optional)"
                     autoSize={{ minRows: 4, maxRows: 8 }}
                   />
+                </Form.Item>
+                <Form.Item>
+                  <div style={{ marginBottom: "16px" }}>
+                    <h4>Claude 3.7 Thinking Mode</h4>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+                      <Switch
+                        checked={thinkingEnabled}
+                        onChange={setThinkingEnabled}
+                        disabled={modelVersion !== "us.anthropic.claude-3-7-sonnet-20250219-v1:0"}
+                      />
+                      <span style={{ marginLeft: "8px" }}>Enable Thinking Mode</span>
+                    </div>
+                    {thinkingEnabled && (
+                      <>
+                        <Form.Item label="Thinking Budget (tokens)">
+                          <Slider
+                            min={1024}
+                            max={24000}
+                            onChange={setThinkingBudgetTokens}
+                            value={thinkingBudgetTokens}
+                            step={1000}
+                            marks={{ 1024: "1K", 16000: "16K", 24000: "24K" }}
+                            disabled={modelVersion !== "us.anthropic.claude-3-7-sonnet-20250219-v1:0"}
+                          />
+                        </Form.Item>
+                        <Form.Item label="Show Thinking in Messages">
+                          <Switch
+                            checked={showThinking}
+                            onChange={setShowThinking}
+                          />
+                        </Form.Item>
+                      </>
+                    )}
+                  </div>
                 </Form.Item>
               </Form>
             </div>

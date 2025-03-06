@@ -9,7 +9,7 @@ const AppFooter = ({user}) => {
   return (
     <Footer style={{ textAlign: 'center' }}>
       {/* nosemgrep: jsx-not-internationalized */}
-      Employee Productivity GenAI Assistant Example© 2024
+      Employee Productivity GenAI Assistant Example© 2025
       {/* nosemgrep: jsx-not-internationalized */}
 
     </Footer>

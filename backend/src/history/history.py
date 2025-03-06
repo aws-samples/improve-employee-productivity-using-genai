@@ -3,11 +3,19 @@ import json
 import time
 import os
 from botocore.exceptions import ClientError
+from decimal import Decimal
 
 # Set up DynamoDB client
 dynamodb = boto3.resource('dynamodb')
 # Set up DynamoDB table
 table = dynamodb.Table(os.environ.get('DYNAMODB_TABLE'))
+
+# Helper class to convert Decimal to int/float for JSON serialization
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return int(o) if o % 1 == 0 else float(o)
+        return super(DecimalEncoder, self).default(o)
 
 def handler(event, context):
     http_method = event['httpMethod']
@@ -46,6 +54,7 @@ def handler(event, context):
             }
     except Exception as e:
         # Handle any other errors
+        print(f"Error in handler: {str(e)}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
@@ -82,7 +91,8 @@ def get_history_by_createdBy(email, last_key_email=None, last_key_timestamp=None
 
         # Query the DynamoDB table with arguments of user
         response = table.query(**query_kwargs)
-
+        
+        # Use the DecimalEncoder for serializing the response items
         return {
             'statusCode': 200,
             'headers': {
@@ -93,9 +103,13 @@ def get_history_by_createdBy(email, last_key_email=None, last_key_timestamp=None
             'body': json.dumps({
                 'items': response['Items'],
                 'last_evaluated_key': response.get('LastEvaluatedKey')  # Can be used for subsequent queries
-            })
+            }, cls=DecimalEncoder)
         }
     except ClientError as e:
+        print(f"DynamoDB error: {str(e)}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"General error: {str(e)}")
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
 
@@ -141,5 +155,9 @@ def delete_history(event, email_from_token):
             },
             'body': json.dumps({'message': 'History deleted successfully'})}
     except ClientError as e:
+        print(f"DynamoDB error in delete: {str(e)}")
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"General error in delete: {str(e)}")
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 

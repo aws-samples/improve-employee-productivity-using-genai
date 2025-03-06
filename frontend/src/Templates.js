@@ -1,6 +1,6 @@
 // nosemgrep: jsx-not-internationalized
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, List, Modal, Radio, Select, message, Typography, Spin, Tooltip  } from 'antd';
+import { Form, Input, Button, List, Modal, Radio, Select, message, Typography, Spin, Tooltip, Switch, Slider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, InfoCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import { fetchTokenIfExpired } from './utils/authHelpers'
 
@@ -100,6 +100,12 @@ const Templates = ({user}) => {
       id: "us.amazon.nova-pro-v1:0",
       name: "us.amazon.nova-pro-v1:0",
       supportsImages: true
+    },
+    {
+      id: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      name: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      supportsImages: true,
+      supportsThinking: true
     }
   ];
 
@@ -148,34 +154,6 @@ const Templates = ({user}) => {
     openModal('edit', template);
   };
   
-  const handleUpdateTemplate = async (template) => {
-    try {
-      const authorizationToken = await fetchTokenIfExpired();
-      
-      const response = await fetch(`${apiUrl}/templates`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorizationToken': authorizationToken
-        },
-        body: JSON.stringify(template)
-      });
-  
-      if (response.ok) {
-        message.success('Template updated successfully');
-        fetchTemplates();  // Refresh the list
-      } else {
-        message.error('Error updating template');
-      }
-    } catch (error) {
-      console.error('Error updating template:', error);
-      message.error('Error updating template');
-    }
-
-    setIsModalVisible(false);
-    form.resetFields();
-
-  };
 
   const handleDeleteTemplate = async (templateId) => {
     try {
@@ -212,6 +190,8 @@ const Templates = ({user}) => {
       const payload = {
         ...values,
         createdBy: email,
+        thinkingEnabled: values.thinkingEnabled || false,
+        thinkingBudgetTokens: values.thinkingBudgetTokens || 4000,
       };
 
       if (!isAdmin) {
@@ -274,10 +254,17 @@ const Templates = ({user}) => {
     if (mode === 'add') {
       formValues = {
         createdBy: email,
-        visibility: isAdmin ? 'public' : 'private' // Admins default to 'public', non-admins to 'private'
+        visibility: isAdmin ? 'public' : 'private', // Admins default to 'public', non-admins to 'private'
+        thinkingEnabled: false,
+        thinkingBudgetTokens: 4000
       };
     } else {
-      formValues = template;
+      // Copy existing template values and add thinking fields if they don't exist
+      formValues = {
+        ...template,
+        thinkingEnabled: template.thinkingEnabled || false,
+        thinkingBudgetTokens: template.thinkingBudgetTokens || 4000
+      };
     }
   
     // If the user is not an admin and we're not viewing, force the visibility to 'private'
@@ -432,7 +419,7 @@ const Templates = ({user}) => {
           ]
         }
       >
-        <Form layout="vertical" form={form} onFinish={modalMode === 'add' ? handleFormFinish : handleUpdateTemplate}>
+        <Form layout="vertical" form={form} onFinish={handleFormFinish}>
           <Form.Item
             name="templateId"
             label="Template Id"
@@ -470,14 +457,78 @@ const Templates = ({user}) => {
               filterOption={(input, option) =>
                 option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
+              onChange={(value) => {
+                // Get the selected model
+                const selectedModel = modelOptions.find(model => model.id === value);
+                // If the model supports thinking, show the thinking options
+                if (selectedModel?.supportsThinking) {
+                  form.setFieldsValue({ thinkingEnabled: true });
+                } else {
+                  form.setFieldsValue({ thinkingEnabled: false });
+                }
+              }}
             >
               {modelOptions.map(model => (
                 <Option key={model.id} value={model.id}>
-                  {model.name} {model.supportsImages ? '(Supports Images)' : ''}
+                  {model.name} 
+                  {model.supportsImages ? ' (Images)' : ''}
+                  {model.supportsThinking ? ' (Thinking)' : ''}
                 </Option>
               ))}
             </Select>
           </Form.Item>
+          
+          {/* Add thinking mode options */}
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => {
+              // Update when model changes or thinkingEnabled changes
+              return prevValues.modelversion !== currentValues.modelversion ||
+                prevValues.thinkingEnabled !== currentValues.thinkingEnabled;
+            }}
+          >
+            {({ getFieldValue }) => {
+              const selectedModelId = getFieldValue('modelversion');
+              const selectedModel = modelOptions.find(model => model.id === selectedModelId);
+              
+              // Only show thinking options for models that support it
+              if (selectedModel?.supportsThinking) {
+                return (
+                  <>
+                    <Form.Item
+                      name="thinkingEnabled"
+                      valuePropName="checked"
+                      initialValue={false}
+                    >
+                      <Switch disabled={modalMode === 'view'} /> Enable Thinking Mode
+                    </Form.Item>
+                    
+                    {getFieldValue('thinkingEnabled') && (
+                      <Form.Item
+                        name="thinkingBudgetTokens"
+                        label="Thinking Budget (tokens)"
+                        initialValue={4000}
+                        style={{ display: 'block' }}
+                      >
+                        <Slider
+                          min={1024}
+                          max={24000}
+                          step={1000}
+                          marks={{
+                            1024: '1K',
+                            4000: '4K',
+                            24000: '24K'
+                          }}
+                        />
+                      </Form.Item>
+                    )}
+                  </>
+                );
+              }
+              return null;
+            }}
+          </Form.Item>
+          
           <Form.Item
             name="systemPrompt"
             label="System Prompt"

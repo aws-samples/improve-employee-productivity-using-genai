@@ -86,6 +86,14 @@ def get_templates_by_createdBy(createdBy):
         }
         
         response = table.scan(**scan_kwargs)
+        items = response['Items']
+
+        # Process items to ensure proper type conversion
+        for item in items:
+            if 'thinkingEnabled' in item:
+                item['thinkingEnabled'] = bool(item['thinkingEnabled'])
+            if 'thinkingBudgetTokens' in item:
+                item['thinkingBudgetTokens'] = int(item['thinkingBudgetTokens'])
 
         return {
             'statusCode': 200, 
@@ -94,8 +102,12 @@ def get_templates_by_createdBy(createdBy):
                 "Access-Control-Allow-Origin": "*",  # This allows any origin to access your API. 
                 "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationtoken"
                  },
-            'body': json.dumps(response['Items'])}
+            'body': json.dumps(items)}
     except ClientError as e:
+        print(f"Error getting templates: {str(e)}")  # Add logging
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")  # Add logging
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
 def get_templates_by_visibility(visibility):
@@ -117,11 +129,19 @@ def get_templates_by_visibility(visibility):
     """
 
     try:
-        # Directly use the string values for filtering
         scan_kwargs = {
             'FilterExpression': boto3.dynamodb.conditions.Attr('visibility').eq(visibility)
         }
         response = table.scan(**scan_kwargs)
+        items = response['Items']
+
+        # Process items to ensure proper type conversion
+        for item in items:
+            if 'thinkingEnabled' in item:
+                item['thinkingEnabled'] = bool(item['thinkingEnabled'])
+            if 'thinkingBudgetTokens' in item:
+                item['thinkingBudgetTokens'] = int(item['thinkingBudgetTokens'])
+
         return {
             'statusCode': 200, 
              "headers": {
@@ -129,8 +149,12 @@ def get_templates_by_visibility(visibility):
                 "Access-Control-Allow-Origin": "*",  # This allows any origin to access your API. 
                 "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationtoken"
                  },
-            'body': json.dumps(response['Items'])}
+            'body': json.dumps(items)}
     except ClientError as e:
+        print(f"Error getting templates: {str(e)}")  # Add logging
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")  # Add logging
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
 
@@ -157,6 +181,15 @@ def create_template(event):
     data = json.loads(event['body'])
     data['templateId'] = str(time.time())  # Generate a unique ID based on epoch time
     data['dateCreated'] = str(time.time()) # Add creation date
+    
+    # Ensure optional fields have default values
+    if 'systemPrompt' not in data:
+        data['systemPrompt'] = ''
+    if 'thinkingEnabled' in data:
+        data['thinkingEnabled'] = bool(data['thinkingEnabled'])  # Ensure boolean type
+    if 'thinkingBudgetTokens' in data:
+        data['thinkingBudgetTokens'] = int(data['thinkingBudgetTokens'])  # Ensure integer type
+    
     try:
         table.put_item(Item=data)
         return {
@@ -168,6 +201,10 @@ def create_template(event):
                  },
             'body': json.dumps({'message': 'Template created successfully'})}
     except ClientError as e:
+        print(f"Error creating template: {str(e)}")  # Add logging
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")  # Add logging
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
 
@@ -208,31 +245,56 @@ def update_template(event, email_from_token):
         return {'statusCode': 403, 'body': json.dumps({'error': 'Access denied'})}
 
     try:
-        # Update the item in DynamoDB
+        # Update the item in DynamoDB with thinking mode fields
+        update_expression = """set 
+            createdBy=:cb, 
+            templateName=:tn, 
+            templateDescription=:td, 
+            modelversion=:mv, 
+            templatePrompt=:tp, 
+            visibility=:v, 
+            templateGuidance=:tg, 
+            systemPrompt=:sp"""
+        
+        expression_values = {
+            ':cb': data['createdBy'],
+            ':tn': data['templateName'],
+            ':td': data['templateDescription'],
+            ':mv': data['modelversion'],
+            ':tp': data['templatePrompt'],
+            ':v': data['visibility'],
+            ':tg': data['templateGuidance'],
+            ':sp': data.get('systemPrompt', '')  # Make systemPrompt optional
+        }
+
+        # Add thinking mode fields if they exist
+        if 'thinkingEnabled' in data:
+            update_expression += ", thinkingEnabled=:te"
+            expression_values[':te'] = data['thinkingEnabled']
+        
+        if 'thinkingBudgetTokens' in data:
+            update_expression += ", thinkingBudgetTokens=:tb"
+            expression_values[':tb'] = data['thinkingBudgetTokens']
+
         response = table.update_item(
             Key={'templateId': template_id},
-            UpdateExpression="set createdBy=:cb, templateName=:tn, templateDescription=:td, modelversion=:mv, templatePrompt=:tp, visibility=:v, templateGuidance=:tg, systemPrompt=:sp",
-            ExpressionAttributeValues={
-                ':cb': data['createdBy'],
-                ':tn': data['templateName'],
-                ':td': data['templateDescription'],
-                ':mv': data['modelversion'],
-                ':tp': data['templatePrompt'],
-                ':v': data['visibility'],
-                ':tg': data['templateGuidance'],
-                ':sp': data['systemPrompt']
-            },
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_values,
             ReturnValues="UPDATED_NEW"
         )
         return {
             'statusCode': 200, 
              "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",  # This allows any origin to access your API. 
+                "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,authorizationtoken"
                  },
             'body': json.dumps({'message': 'Template updated successfully'})}
     except ClientError as e:
+        print(f"Error updating template: {str(e)}")  # Add logging
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")  # Add logging
         return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
 
 def delete_template(event, email_from_token):
