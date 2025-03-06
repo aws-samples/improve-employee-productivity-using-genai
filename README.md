@@ -372,7 +372,7 @@ The application now supports Claude 3.7 Sonnet's powerful thinking/reasoning cap
 - **Expanded Token Limits**: Increased max token limit to 32K by default (up to 64K) for Claude 3.7 models
 - **Template Integration**: Create and share templates with thinking mode pre-enabled
 
-- ![Thinking Mode](frontend/artifacts/Thinking-Mode.gif)
+   - ![Thinking Mode](frontend/artifacts/Thinking-Mode.gif)
 
 ### Token Usage Tracking
 
