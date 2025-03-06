@@ -446,7 +446,7 @@ Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon
   - Other AWS Services: $16.51
   - **Total**: $50.26
 
-- **Claude 3.5 Sonnet Model**:
+- **Claude 3.5 Sonnet Model (v1 and v2)**:
   - Bedrock: $33.75
   - Other AWS Services: $16.51
   - **Total**: $50.26
@@ -456,10 +456,10 @@ Bedrock Pricing can be seen in the [AWS Bedrock Pricing page](https://aws.amazon
   - Other AWS Services: $16.51
   - **Total**: $185.26
 
-- **Claude 3.7 Sonnet (with Thinking Mode)**:
-  - Bedrock: $75.00 (including thinking tokens)
+- **Claude 3.7 Sonnet (with or without Thinking Mode)**:
+  - Bedrock: $33.75(including thinking tokens)
   - Other AWS Services: $16.51
-  - **Total**: $91.51
+  - **Total**: $50.26
 
 > **Notes**: While the cost estimates are calculated using a single model, you have the flexibility to switch between models as needed. For example, if you require a more advanced model like Opus for a specific request, you'll only be charged for that usage. For most requests, you can utilize more cost-optimized models like Haiku, which will help keep the overall cost of the tool lower and optimized for your needs.
 

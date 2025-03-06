@@ -110,7 +110,6 @@ const Playground = ({ user }) => {
   const [thinkingEnabled, setThinkingEnabled] = useState(false);
   const [thinkingBudgetTokens, setThinkingBudgetTokens] = useState(4000); // Changed default to 4000
   const [currentThinking, setCurrentThinking] = useState("");
-  const [showThinking, setShowThinking] = useState(true);
 
   // Add state for controlling the thinking panel
   const [thinkingPanelVisible, setThinkingPanelVisible] = useState(true);
@@ -827,14 +826,6 @@ const Playground = ({ user }) => {
                         value={thinkingBudgetTokens} 
                         onChange={setThinkingBudgetTokens} 
                         step={1000}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label="Show Thinking in Output">
-                      <Switch 
-                        checked={showThinking} 
-                        onChange={setShowThinking}
                       />
                     </Form.Item>
                   </Col>
