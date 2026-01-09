@@ -22,7 +22,7 @@
     "react-dom": "18.2.0",
     "react-markdown": "9.0.1",
     "react-refresh": "0.11.0",
-    "react-router-dom": "6.17.0",
+    "react-router-dom": "6.30.3",
     "react-scripts": "5.0.1",
     "rehype-highlight": "6.0.0",
     "resolve-url-loader": "5.0.0",
